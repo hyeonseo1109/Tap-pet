@@ -2,7 +2,7 @@
 import { globalStyle } from "@vanilla-extract/css";
 
 /* =========================
-   1. RESET (브라우저 초기화)
+  1. RESET (브라우저 초기화)
 ========================= */
 
 globalStyle("*, *::before, *::after", {
@@ -25,7 +25,7 @@ globalStyle("body", {
 });
 
 /* =========================
-   2. 기본 요소 초기화
+  2. 기본 요소 초기화
 ========================= */
 
 globalStyle("h1, h2, h3, h4, h5, h6", {
@@ -64,8 +64,7 @@ globalStyle("img", {
 });
 
 /* =========================
-   3. 앱 기본 구조 (layout 역할 포함)
-   👉 layout.css.ts 없이 여기서 처리
+  3. 앱 기본 구조 (layout 역할 포함)
 ========================= */
 
 globalStyle("#root", {
@@ -75,7 +74,7 @@ globalStyle("#root", {
 });
 
 /* =========================
-   4. 스크롤바 (선택)
+  4. 스크롤바 (선택)
 ========================= */
 
 globalStyle("::-webkit-scrollbar", {
@@ -93,7 +92,7 @@ globalStyle("::-webkit-scrollbar-track", {
 });
 
 /* =========================
-   5. 선택 영역 (UX 개선)
+  5. 선택 영역 (UX 개선)
 ========================= */
 
 globalStyle("::selection", {
