@@ -1,4 +1,4 @@
-import { supabase } from "@shared/api/supabase";
+import { supabase } from "@shared/api";
 
 export const loginWithGoogle = async () => {
   await supabase.auth.signInWithOAuth({

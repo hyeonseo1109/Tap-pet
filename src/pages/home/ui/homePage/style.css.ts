@@ -48,3 +48,12 @@ export const contentWrapper = style({
   border: "2px solid white",
   height: "100%",
 });
+
+export const homePage = style({
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  height: "100vh",
+  width: "100%",
+});
