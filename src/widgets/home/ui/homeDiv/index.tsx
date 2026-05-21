@@ -1,12 +1,11 @@
 import { CharacterImage } from "@entities/character/ui/characterImage";
 import { useGameEngine } from "@features/game-engine/hook/useGameEngine";
+import * as styles from "./style.css";
 
 export const HomeDiv = () => {
   const { typingCount, xp, state, stage, animationSpeedRef } = useGameEngine();
   return (
-    <div>
-      <h1>Typing Pet</h1>
-
+    <div className={styles.homeWidget}>
       <div>
         <p>Typing: {typingCount}</p>
         <p>XP: {xp}</p>

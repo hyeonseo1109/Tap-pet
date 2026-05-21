@@ -10,14 +10,7 @@ export const App = () => {
 
       <Routes>
         <Route path="/login-page" element={<LoginPage />} />
-        <Route
-          path="/home-page"
-          element={
-            // <ProtectedRoute>
-            <HomePage />
-            // </ProtectedRoute>
-          }
-        />
+        <Route path="/main-page" element={<HomePage />} />
       </Routes>
     </BrowserRouter>
   );
