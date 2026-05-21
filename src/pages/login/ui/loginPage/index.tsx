@@ -1,5 +1,5 @@
-import { AllWrapper } from "@shared/ui/allWrapper";
+import { LoginWidget } from "@widgets/login/ui";
 
 export const LoginPage = () => {
-  return <AllWrapper />;
+  return <LoginWidget />;
 };
