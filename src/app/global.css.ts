@@ -9,10 +9,11 @@ globalStyle("*, *::before, *::after", {
   boxSizing: "border-box",
 });
 
-globalStyle("html, body", {
+globalStyle("html, #root, body", {
   margin: 0,
   padding: 0,
   height: "100%",
+  width: "100%",
 });
 
 globalStyle("body", {
@@ -24,6 +25,13 @@ globalStyle("body", {
   lineHeight: 1.5,
   backgroundImage: "url('/background.jpeg')",
   backgroundSize: "cover",
+});
+
+globalStyle("#root", {
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
 });
 
 /* =========================

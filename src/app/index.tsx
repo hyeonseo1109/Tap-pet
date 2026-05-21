@@ -5,22 +5,20 @@ import { LoginPage } from "@pages/login/ui";
 
 export const App = () => {
   return (
-    <div>
-      <BrowserRouter>
-        {/* <HomePage /> */}
+    <BrowserRouter>
+      {/* <HomePage /> */}
 
-        <Routes>
-          <Route path="/login-page" element={<LoginPage />} />
-          <Route
-            path="/home-page"
-            element={
-              // <ProtectedRoute>
-              <HomePage />
-              // </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </BrowserRouter>
-    </div>
+      <Routes>
+        <Route path="/login-page" element={<LoginPage />} />
+        <Route
+          path="/home-page"
+          element={
+            // <ProtectedRoute>
+            <HomePage />
+            // </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </BrowserRouter>
   );
 };
