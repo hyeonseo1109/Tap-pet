@@ -22,6 +22,8 @@ globalStyle("body", {
   backgroundColor: "#white",
   color: "#black",
   lineHeight: 1.5,
+  backgroundImage: "url('/background.jpeg')",
+  backgroundSize: "cover",
 });
 
 /* =========================

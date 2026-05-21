@@ -8,4 +8,5 @@ export const characterWidget = style({
   height: 64,
   backgroundRepeat: "no-repeat",
   imageRendering: "pixelated",
+  transform: "scale(1.2)",
 });
