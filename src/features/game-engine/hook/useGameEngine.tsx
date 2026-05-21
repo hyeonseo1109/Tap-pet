@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 export const useGameEngine = () => {
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastKeyTimeRef = useRef(0);
-  const animationSpeedRef = useRef(400);
+  const animationSpeedRef = useRef(220);
   const [typingCount, setTypingCount] = useState(0);
   const [xp, setXp] = useState(0);
   const [state, setState] = useState<"idle" | "typing">("idle");
@@ -30,9 +30,7 @@ export const useGameEngine = () => {
       }
 
       setTypingCount((c) => c + 1);
-
       setXp((x) => x + 1);
-
       setState("typing");
 
       if (typingTimerRef.current) {
@@ -42,8 +40,8 @@ export const useGameEngine = () => {
       typingTimerRef.current = setTimeout(() => {
         setState("idle");
 
-        animationSpeedRef.current = 400;
-      }, 1500);
+        animationSpeedRef.current = 220;
+      }, 500);
     };
 
     window.addEventListener("keydown", handler);
