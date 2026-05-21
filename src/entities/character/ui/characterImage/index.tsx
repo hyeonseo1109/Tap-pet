@@ -17,7 +17,7 @@ const STAGE_Y = {
   adult: 3,
 };
 
-export const CharacterWidget = ({ stage, state, animationSpeedRef }: Props) => {
+export const CharacterImage = ({ stage, state, animationSpeedRef }: Props) => {
   const [frame, setFrame] = useState(0);
   const frameRef = useRef(0);
   const lastFrameTimeRef = useRef(0);

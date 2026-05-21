@@ -1,1 +1,1 @@
-export * from "./characterWidget";
+export * from "./";
