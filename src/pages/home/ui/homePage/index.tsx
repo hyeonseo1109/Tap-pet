@@ -1,6 +1,9 @@
-import { HomeDiv } from "@widgets/home/ui/homeDiv";
 import { useState } from "react";
 import * as styles from "./style.css";
+import { HomeWidget } from "@widgets/home/ui";
+import { SettingWidget } from "@widgets/setting/ui";
+import { StatsWidget } from "@widgets/stats/ui";
+import { FriendWidget } from "@widgets/friend/ui";
 
 type HomePageProps = "home" | "friend" | "stats" | "setting";
 
@@ -10,27 +13,27 @@ export const HomePage = () => {
     <div className={styles.homeWidget}>
       <div className={styles.tapWrapper}>
         <button className={styles.tapButton} onClick={() => setState("home")}>
-          Home
+          홈
         </button>
         <button className={styles.tapButton} onClick={() => setState("friend")}>
-          Friend
+          친구
         </button>
         <div className={styles.tapButton}></div>
         <button className={styles.tapButton} onClick={() => setState("stats")}>
-          Stats
+          통계
         </button>
         <button
           className={styles.tapButton}
           onClick={() => setState("setting")}
         >
-          Setting
+          설정
         </button>
       </div>
       <div className={styles.contentWrapper}>
-        {state === "home" && <HomeDiv />}
-        {state === "friend" && <FriendDiv />}
-        {state === "stats" && <StatsDiv />}
-        {state === "setting" && <SettingDiv />}
+        {state === "home" && <HomeWidget />}
+        {state === "friend" && <FriendWidget />}
+        {state === "stats" && <StatsWidget />}
+        {state === "setting" && <SettingWidget />}
       </div>
     </div>
   );

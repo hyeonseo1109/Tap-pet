@@ -2,7 +2,7 @@ import { CharacterImage } from "@entities/character/ui/characterImage";
 import { useGameEngine } from "@features/game-engine/hook/useGameEngine";
 import * as styles from "./style.css";
 
-export const HomeDiv = () => {
+export const HomeWidget = () => {
   const { typingCount, xp, state, stage, animationSpeedRef } = useGameEngine();
   return (
     <div className={styles.homeWidget}>

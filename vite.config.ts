@@ -1,13 +1,16 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import tsconfigPaths from "vite-tsconfig-paths";
 import { vanillaExtractPlugin } from "@vanilla-extract/vite-plugin";
+import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
-  plugins: [react(), tsconfigPaths(), vanillaExtractPlugin()],
+  plugins: [react(), vanillaExtractPlugin(), tsconfigPaths()],
 
-  server: {
-    port: 5173,
-    open: true,
+  optimizeDeps: {
+    include: ["tslib", "@supabase/supabase-js"],
+  },
+
+  ssr: {
+    noExternal: ["@supabase/supabase-js"],
   },
 });
