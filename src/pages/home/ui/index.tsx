@@ -1,11 +1,8 @@
-import { xpLevel } from "@entities/character/lib/xpLevel";
 import { useGameEngine } from "@features/game-engine/hook/useGameEngine";
-
 import { CharacterWidget } from "@widgets/character/ui";
 
 export const Home = () => {
-  const { typingCount, xp, state } = useGameEngine();
-  const stage = xpLevel(xp);
+  const { typingCount, xp, state, stage, animationSpeedRef } = useGameEngine();
 
   return (
     <div style={{ padding: 40 }}>
@@ -18,7 +15,11 @@ export const Home = () => {
         <p>Stage: {stage}</p>
       </div>
 
-      <CharacterWidget stage={stage} />
+      <CharacterWidget
+        stage={stage}
+        state={state}
+        animationSpeedRef={animationSpeedRef}
+      />
     </div>
   );
 };
