@@ -35,7 +35,7 @@ export const CharacterImage = ({ stage, state, animationSpeedRef }: Props) => {
     };
     animationId = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animationId);
-  }, []);
+  }, [animationSpeedRef]);
 
   const x = frame * FRAME_WIDTH;
 

@@ -1,17 +1,44 @@
-import { xpLevel } from "@entities/character/lib/xpLevel";
-
 import { useEffect, useRef, useState } from "react";
+import type { XpCategory } from "@entities/character/model";
 
-export const useGameEngine = () => {
+type UseGameEngineParams = {
+  enabled?: boolean;
+  onTyping?: (category: XpCategory) => void;
+};
+
+const inferXpCategory = (): XpCategory => {
+  const activeElement = document.activeElement;
+
+  if (
+    activeElement instanceof HTMLInputElement ||
+    activeElement instanceof HTMLTextAreaElement
+  ) {
+    return "creativity";
+  }
+
+  return "adventure";
+};
+
+export const useGameEngine = ({
+  enabled = true,
+  onTyping,
+}: UseGameEngineParams = {}) => {
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastKeyTimeRef = useRef(0);
   const animationSpeedRef = useRef(220);
-  const [typingCount, setTypingCount] = useState(0);
-  const [xp, setXp] = useState(0);
   const [state, setState] = useState<"idle" | "typing">("idle");
+  const onTypingRef = useRef(onTyping);
 
   useEffect(() => {
-    const handler = () => {
+    onTypingRef.current = onTyping;
+  }, [onTyping]);
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    const handler = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+
       const now = performance.now();
 
       const diff = now - lastKeyTimeRef.current;
@@ -29,8 +56,7 @@ export const useGameEngine = () => {
         animationSpeedRef.current = 400;
       }
 
-      setTypingCount((c) => c + 1);
-      setXp((x) => x + 1);
+      onTypingRef.current?.(inferXpCategory());
       setState("typing");
 
       if (typingTimerRef.current) {
@@ -46,14 +72,16 @@ export const useGameEngine = () => {
 
     window.addEventListener("keydown", handler);
 
-    return () => window.removeEventListener("keydown", handler);
-  }, []);
+    return () => {
+      window.removeEventListener("keydown", handler);
+      if (typingTimerRef.current) {
+        clearTimeout(typingTimerRef.current);
+      }
+    };
+  }, [enabled]);
 
   return {
-    typingCount,
-    xp,
     state,
-    stage: xpLevel(xp),
     animationSpeedRef,
   };
 };
