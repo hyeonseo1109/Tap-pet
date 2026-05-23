@@ -135,15 +135,16 @@ export const friendCard = style({
   카드 내에서 중앙 배치를 위해 래퍼에서 overflow:hidden + 중앙 정렬
 */
 export const friendPet = style({
-  minHeight: 120,
+  height: 120,
   border: "3px solid #5a3525",
   backgroundColor: "#7aa16a",
   backgroundImage: "url('/idle.png')",
   backgroundRepeat: "no-repeat",
-  backgroundSize: "auto" /* 원본 크기 유지 - JS에서 x/y만 덮어씀 */,
-  backgroundPositionX: "50%" /* 가로 중앙 */,
-  backgroundPositionY: "28px" /* 세로 기본값 (JS에서 stage에 따라 덮어씀) */,
+  backgroundSize: "208px auto",
+  backgroundPositionX: "center",
+  backgroundPositionY: "16px",
   imageRendering: "pixelated",
+  transform: "scale(1)", // 50% 확대
 });
 
 export const friendInfo = style({

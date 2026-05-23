@@ -307,8 +307,7 @@ export const FriendWidget = ({
                   style={
                     pet
                       ? {
-                          backgroundPositionX: "0px",
-                          backgroundPositionY: `-${stageY[petStage]}px`,
+                          backgroundPositionY: `${16 - stageY[petStage]}px`, // stage offset 반영
                         }
                       : undefined
                   }

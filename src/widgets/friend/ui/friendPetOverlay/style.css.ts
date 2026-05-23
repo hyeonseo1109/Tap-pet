@@ -2,13 +2,12 @@ import { style } from "@vanilla-extract/css";
 
 export const friendOverlayItem = style({
   position: "fixed",
-  bottom: 20,
+  bottom: 15,
   display: "flex",
+  zIndex: 100,
   flexDirection: "column",
   alignItems: "center",
   gap: 4,
-  zIndex: 100,
-  // 호버 감지를 위해 pointerEvents 허용
 });
 
 export const friendOverlayHoverArea = style({
@@ -46,10 +45,11 @@ export const friendOverlayClose = style({
 export const friendOverlayPet = style({
   width: 52,
   height: 64,
+  bottom: 30,
   backgroundRepeat: "no-repeat",
   backgroundSize: "auto",
   imageRendering: "pixelated",
-  transform: "scale(1.2)",
+  transform: "scale(1.5)",
   transformOrigin: "bottom center",
 });
 
