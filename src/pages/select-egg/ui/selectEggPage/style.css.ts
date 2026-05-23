@@ -7,6 +7,7 @@ export const page = style({
   alignItems: "center",
   justifyContent: "center",
   padding: 24,
+  boxSizing: "border-box",
 });
 
 export const panel = style({
@@ -16,6 +17,8 @@ export const panel = style({
   background: "#8f5b3d",
   color: "#fff8df",
   padding: 28,
+  boxSizing: "border-box",
+  overflow: "hidden",
 });
 
 export const header = style({
@@ -31,8 +34,9 @@ export const kicker = style({
 });
 
 export const title = style({
-  fontSize: "clamp(24px, 4vw, 38px)",
+  fontSize: "clamp(20px, 4vw, 32px)",
   textShadow: "0 3px 0 #4b2b1d",
+  lineHeight: 1.2,
 });
 
 export const notice = style({
@@ -100,6 +104,7 @@ export const nameField = style({
 
 globalStyle(`${nameField} input`, {
   width: "100%",
+  boxSizing: "border-box",
   border: "3px solid #4b2b1d",
   background: "#fff8df",
   color: "#3f261a",
@@ -118,6 +123,8 @@ export const startButton = style({
   textAlign: "center",
   fontWeight: 900,
   boxShadow: "0 5px 0 #2f4f32",
+  boxSizing: "border-box",
+  display: "block",
   selectors: {
     "&:disabled": {
       opacity: 0.65,

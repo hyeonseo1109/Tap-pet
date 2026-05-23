@@ -243,11 +243,31 @@ export const HomePage = () => {
             <HomeWidget
               isLoading={isLoadingPets}
               mainPet={mainPet}
+              pets={pets}
+              onAddNewPet={async (species, name) => {
+                const {
+                  data: { user },
+                } = await supabase.auth.getUser();
+                if (!user) return;
+
+                const { error } = await supabase.from("pets").insert({
+                  owner_id: user.id,
+                  name,
+                  species,
+                  is_main: false,
+                });
+
+                if (error) {
+                  alert(error.message);
+                  return;
+                }
+
+                await reloadPets();
+              }}
               onBringPet={async (petId) => {
                 const {
                   data: { user },
                 } = await supabase.auth.getUser();
-
                 if (!user) return;
 
                 const clearMain = await supabase
@@ -290,7 +310,6 @@ export const HomePage = () => {
 
                 await reloadPets();
               }}
-              pets={pets}
             />
           )}
           {state === "friend" && <FriendWidget />}

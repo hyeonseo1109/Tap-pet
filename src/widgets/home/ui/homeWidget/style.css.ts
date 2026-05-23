@@ -26,9 +26,9 @@ export const restPanel = style({
 export const sectionTitle = style({
   display: "flex",
   alignItems: "baseline",
-  justifyContent: "space-between",
   gap: 12,
   marginBottom: 14,
+  flexWrap: "wrap",
 });
 
 globalStyle(`${sectionTitle} span`, {
@@ -41,6 +41,18 @@ globalStyle(`${sectionTitle} strong`, {
   color: "#3d281f",
   fontSize: 24,
   lineHeight: 1.1,
+  flex: 1,
+});
+
+export const addPetButton = style({
+  marginLeft: "auto",
+  border: "2px solid #45613b",
+  background: "#84a965",
+  color: "#fff8df",
+  padding: "6px 12px",
+  fontWeight: 900,
+  fontSize: 13,
+  whiteSpace: "nowrap",
 });
 
 export const mainPetCard = style({
@@ -69,7 +81,6 @@ export const petPortrait = style({
   height: 64,
   backgroundRepeat: "no-repeat",
   imageRendering: "pixelated",
-  transform: "scale(2.25)",
 });
 
 export const petInfo = style({
@@ -202,4 +213,160 @@ export const emptyText = style({
   padding: 16,
   color: "#6a442f",
   fontWeight: 800,
+});
+
+/* ── 새 펫 데려오기 모달 ── */
+
+export const modalOverlay = style({
+  position: "fixed",
+  inset: 0,
+  background: "rgba(42, 25, 17, 0.72)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: 200,
+  padding: 24,
+});
+
+export const modalPanel = style({
+  width: "min(680px, 100%)",
+  border: "4px solid #4b2b1d",
+  background: "#8f5b3d",
+  color: "#fff8df",
+  padding: 26,
+  boxShadow: "0 0 0 4px #f2d8a7, 0 14px 0 rgba(52,29,18,0.45)",
+  boxSizing: "border-box",
+  maxHeight: "90vh",
+  overflowY: "auto",
+});
+
+export const modalHeader = style({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  marginBottom: 20,
+});
+
+globalStyle(`${modalHeader} span`, {
+  fontSize: 22,
+  fontWeight: 900,
+  textShadow: "0 2px 0 #4b2b1d",
+});
+
+export const modalCloseButton = style({
+  border: "2px solid #4b2b1d",
+  background: "#6d422f",
+  color: "#ffecc2",
+  width: 32,
+  height: 32,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontWeight: 900,
+});
+
+export const eggGrid = style({
+  display: "grid",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gap: 12,
+  "@media": {
+    "(max-width: 560px)": {
+      gridTemplateColumns: "1fr",
+    },
+  },
+});
+
+export const eggCard = style({
+  minHeight: 150,
+  display: "grid",
+  justifyItems: "center",
+  alignContent: "center",
+  gap: 8,
+  padding: 16,
+  border: "3px solid #5a3525",
+  background: "#c58a58",
+  color: "#fff8df",
+  textAlign: "center",
+  boxShadow: "inset 0 0 0 3px rgba(255,238,187,0.35)",
+  transition: "background 120ms ease",
+  selectors: {
+    "&:hover": {
+      background: "#d79a62",
+    },
+  },
+});
+
+export const selectedEggCard = style({
+  background: "#6f8d55",
+  borderColor: "#2e4b2b",
+  boxShadow: "inset 0 0 0 3px #dff0a5, 0 6px 0 rgba(33,58,31,0.45)",
+});
+
+export const eggIcon = style({
+  width: 52,
+  height: 64,
+  backgroundImage: "url('/idle.png')",
+  backgroundRepeat: "no-repeat",
+  backgroundPosition: "0 0",
+  imageRendering: "pixelated",
+  transform: "scale(1.5)",
+  marginBottom: 14,
+});
+
+export const nameField = style({
+  display: "grid",
+  gap: 8,
+  marginTop: 20,
+  color: "#ffe9aa",
+  fontWeight: 800,
+});
+
+globalStyle(`${nameField} input`, {
+  width: "100%",
+  boxSizing: "border-box",
+  border: "3px solid #4b2b1d",
+  background: "#fff8df",
+  color: "#3f261a",
+  padding: "13px 16px",
+  outline: "none",
+  boxShadow: "inset 0 3px 0 rgba(75,43,29,0.18)",
+});
+
+export const fieldError = style({
+  color: "#ff6b6b",
+  fontSize: 13,
+  fontWeight: 800,
+});
+
+export const modalActions = style({
+  display: "grid",
+  gridTemplateColumns: "1fr 2fr",
+  gap: 10,
+  marginTop: 18,
+});
+
+export const cancelButton = style({
+  border: "3px solid #4b2b1d",
+  background: "#6d422f",
+  color: "#ffecc2",
+  padding: "13px 18px",
+  fontWeight: 900,
+  boxShadow: "0 4px 0 #3b2010",
+  textAlign: "center",
+});
+
+export const confirmButton = style({
+  border: "3px solid #2f4f32",
+  background: "#79a85d",
+  color: "#fff8df",
+  padding: "13px 18px",
+  fontWeight: 900,
+  boxShadow: "0 4px 0 #2f4f32",
+  textAlign: "center",
+  selectors: {
+    "&:disabled": {
+      opacity: 0.65,
+      cursor: "wait",
+    },
+  },
 });

@@ -7,6 +7,7 @@ export const page = style({
   alignItems: "center",
   justifyContent: "center",
   padding: 24,
+  boxSizing: "border-box",
 });
 
 export const panel = style({
@@ -16,6 +17,8 @@ export const panel = style({
   color: "#fff8df",
   padding: 30,
   boxShadow: "0 0 0 4px #f0d49a, 0 16px 0 rgba(42, 25, 17, 0.42)",
+  boxSizing: "border-box",
+  overflow: "hidden",
 });
 
 export const header = style({
@@ -32,8 +35,8 @@ globalStyle(`${header} span`, {
 });
 
 globalStyle(`${header} h1`, {
-  fontSize: "clamp(26px, 5vw, 40px)",
-  lineHeight: 1.1,
+  fontSize: "clamp(20px, 4vw, 32px)",
+  lineHeight: 1.2,
   textShadow: "0 3px 0 #4b2b1d",
 });
 
@@ -52,12 +55,19 @@ export const field = style({
 
 globalStyle(`${field} input`, {
   width: "100%",
+  boxSizing: "border-box",
   border: "3px solid #4b2b1d",
   background: "#fff8df",
   color: "#3f261a",
   padding: "14px 16px",
   outline: "none",
   boxShadow: "inset 0 3px 0 rgba(75, 43, 29, 0.18)",
+});
+
+export const errorText = style({
+  color: "#ff6b6b",
+  fontSize: 13,
+  fontWeight: 800,
 });
 
 export const submitButton = style({
@@ -70,4 +80,6 @@ export const submitButton = style({
   textAlign: "center",
   fontWeight: 900,
   boxShadow: "0 5px 0 #2f4f32",
+  boxSizing: "border-box",
+  display: "block",
 });

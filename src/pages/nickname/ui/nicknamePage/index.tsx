@@ -5,13 +5,14 @@ import * as styles from "./style.css";
 
 export const NicknamePage = () => {
   const [nickname, setNickname] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async () => {
     const trimmedNickname = nickname.trim();
 
     if (!trimmedNickname) {
-      alert("닉네임을 입력해 주세요.");
+      setError("닉네임을 입력해 주세요.");
       return;
     }
 
@@ -21,13 +22,26 @@ export const NicknamePage = () => {
 
     if (!user) return;
 
-    const { error } = await supabase.from("users_profile").upsert({
+    // 중복 닉네임 확인
+    const { data: existing } = await supabase
+      .from("users_profile")
+      .select("id")
+      .eq("nickname", trimmedNickname)
+      .neq("id", user.id)
+      .maybeSingle();
+
+    if (existing) {
+      setError("이미 사용 중인 닉네임이에요. 다른 이름을 입력해 주세요.");
+      return;
+    }
+
+    const { error: upsertError } = await supabase.from("users_profile").upsert({
       id: user.id,
       nickname: trimmedNickname,
     });
 
-    if (error) {
-      alert(error.message);
+    if (upsertError) {
+      setError("저장 중 오류가 발생했어요. 다시 시도해 주세요.");
       return;
     }
 
@@ -48,9 +62,14 @@ export const NicknamePage = () => {
           <input
             value={nickname}
             maxLength={16}
-            onChange={(e) => setNickname(e.target.value)}
+            onChange={(e) => {
+              setNickname(e.target.value);
+              if (error) setError("");
+            }}
             placeholder="닉네임 입력"
           />
+          {/* {error && <span className={styles.errorText}>{error}</span>} */}
+          {error && <span className={styles.errorText}>{error}</span>}
         </label>
 
         <button className={styles.submitButton} onClick={handleSubmit}>
