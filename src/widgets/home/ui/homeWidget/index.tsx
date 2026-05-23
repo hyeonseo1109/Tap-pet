@@ -49,7 +49,7 @@ const stageY: Record<CharacterStage, number> = {
 const formatDate = (date?: string | null) => {
   if (!date) return "기록 준비 중";
   const d = new Date(date);
-  return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
+  return `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}`;
 };
 
 /** 대표펫 초상화 - 크게 */
