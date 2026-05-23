@@ -34,6 +34,28 @@ type FriendProfile = {
   main_pet?: Pet;
 };
 
+type AppSettings = {
+  showOverlay: boolean;
+  showCategoryXp: boolean;
+  shareDetails: boolean;
+};
+
+const defaultSettings: AppSettings = {
+  showOverlay: true,
+  showCategoryXp: true,
+  shareDetails: true,
+};
+
+const loadSettings = (): AppSettings => {
+  const saved = localStorage.getItem("grow-pet-settings");
+  if (!saved) return defaultSettings;
+  try {
+    return { ...defaultSettings, ...JSON.parse(saved) };
+  } catch {
+    return defaultSettings;
+  }
+};
+
 export const HomePage = () => {
   const [tab, setTab] = useState<Tab>("home");
   const [myId, setMyId] = useState<string | null>(null);
@@ -43,20 +65,18 @@ export const HomePage = () => {
   const [hiddenOverlayIds, setHiddenOverlayIds] = useState<Set<string>>(
     new Set(),
   );
-  const [showOverlay, setShowOverlay] = useState(() => {
-    const saved = localStorage.getItem("grow-pet-settings");
-    if (!saved) return true;
-    try {
-      return JSON.parse(saved).showOverlay ?? true;
-    } catch {
-      return true;
-    }
-  });
+  const [appSettings, setAppSettings] = useState<AppSettings>(loadSettings);
 
   const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingPetRef = useRef<Pet | null>(null);
   const initialLoadDoneRef = useRef(false);
   const friendIdsRef = useRef<string[]>([]);
+  // handleTyping 내부에서 최신 settings를 참조하기 위한 ref
+  const appSettingsRef = useRef(appSettings);
+
+  useEffect(() => {
+    appSettingsRef.current = appSettings;
+  }, [appSettings]);
 
   const mainPet = useMemo(
     () => pets.find((pet) => pet.is_main) ?? pets[0],
@@ -236,7 +256,11 @@ export const HomePage = () => {
             ...pet,
             total_xp: getPetXp(pet) + 1,
             typing_count: (pet.typing_count ?? 0) + 1,
-            [col]: typeof pet[col] === "number" ? (pet[col] as number) + 1 : 1,
+            // showCategoryXp가 꺼져 있으면 카테고리 XP는 올리지 않음
+            ...(appSettingsRef.current.showCategoryXp && {
+              [col]:
+                typeof pet[col] === "number" ? (pet[col] as number) + 1 : 1,
+            }),
           };
           schedulePersist(nextPet);
           return nextPet;
@@ -255,7 +279,7 @@ export const HomePage = () => {
 
   return (
     <div className={styles.homePage}>
-      {mainPet && showOverlay && (
+      {mainPet && appSettings.showOverlay && (
         <CharacterImage
           stage={mainPetStage}
           state={petState}
@@ -263,7 +287,7 @@ export const HomePage = () => {
         />
       )}
 
-      {showOverlay && (
+      {appSettings.showOverlay && (
         <FriendPetOverlay
           onlineFriends={onlineFriendsForOverlay}
           onHide={(id) => setHiddenOverlayIds((prev) => new Set([...prev, id]))}
@@ -367,9 +391,7 @@ export const HomePage = () => {
           )}
           {tab === "stats" && <StatsWidget pets={pets} />}
           {tab === "setting" && (
-            <SettingWidget
-              onSettingsChange={(next) => setShowOverlay(next.showOverlay)}
-            />
+            <SettingWidget onSettingsChange={(next) => setAppSettings(next)} />
           )}
         </div>
       </div>

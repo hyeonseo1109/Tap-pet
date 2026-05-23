@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { supabase } from "@shared/api";
 import { DeleteAccountSection } from "../deleteAccountSection";
 import * as styles from "./style.css";
 
@@ -44,13 +45,24 @@ export const SettingWidget = ({ onSettingsChange }: SettingWidgetProps) => {
     }
   });
 
-  const handleToggle = (key: SettingKey) => {
-    setValues((current) => {
-      const next = { ...current, [key]: !current[key] };
-      localStorage.setItem("grow-pet-settings", JSON.stringify(next));
-      onSettingsChange?.(next);
-      return next;
-    });
+  const handleToggle = async (key: SettingKey) => {
+    const next = { ...values, [key]: !values[key] };
+    setValues(next);
+    localStorage.setItem("grow-pet-settings", JSON.stringify(next));
+    onSettingsChange?.(next);
+
+    // shareDetails는 친구 탭에서 DB로 읽어오므로 Supabase에도 반영
+    if (key === "shareDetails") {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const { error } = await supabase
+        .from("users_profile")
+        .update({ share_details: next.shareDetails })
+        .eq("id", user.id);
+      if (error) console.error("[grow-pet] share_details update error", error);
+    }
   };
 
   return (
@@ -67,7 +79,7 @@ export const SettingWidget = ({ onSettingsChange }: SettingWidgetProps) => {
               </div>
               <input
                 checked={values[setting.key]}
-                onChange={() => handleToggle(setting.key)}
+                onChange={() => void handleToggle(setting.key)}
                 type="checkbox"
               />
             </label>
