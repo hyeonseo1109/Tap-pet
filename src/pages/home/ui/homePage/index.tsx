@@ -56,6 +56,7 @@ export const HomePage = () => {
   const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingPetRef = useRef<Pet | null>(null);
   const initialLoadDoneRef = useRef(false);
+  const friendIdsRef = useRef<string[]>([]);
 
   const mainPet = useMemo(
     () => pets.find((pet) => pet.is_main) ?? pets[0],
@@ -66,6 +67,10 @@ export const HomePage = () => {
     () => friendProfiles.map((f) => f.id),
     [friendProfiles],
   );
+
+  useEffect(() => {
+    friendIdsRef.current = friendIds;
+  }, [friendIds]);
 
   const { onlineFriendIds } = usePresence({ userId: myId, friendIds });
   const { typingFriendIds, broadcastTyping } = useFriendTyping(myId, friendIds);
@@ -173,6 +178,35 @@ export const HomePage = () => {
     setFriendProfiles(enriched);
   }, []);
 
+  // 친구 펫 실시간 업데이트
+  useEffect(() => {
+    if (!myId) return;
+
+    const channel = supabase
+      .channel("friend-pets-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "pets",
+        },
+        (payload) => {
+          const updatedOwnerId = (payload.new as { owner_id?: string })
+            ?.owner_id;
+          if (updatedOwnerId && friendIdsRef.current.includes(updatedOwnerId)) {
+            void reloadFriendProfiles();
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [myId, reloadFriendProfiles]);
+
+  // 초기 로드
   useEffect(() => {
     if (initialLoadDoneRef.current) return;
     initialLoadDoneRef.current = true;
