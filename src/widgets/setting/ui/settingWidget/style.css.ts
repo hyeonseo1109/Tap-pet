@@ -5,6 +5,9 @@ export const settingWidget = style({
   minHeight: "100%",
   padding: 22,
   color: "#3d281f",
+  display: "grid",
+  alignContent: "start",
+  gap: 18,
 });
 
 export const settingPanel = style({

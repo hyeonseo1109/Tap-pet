@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DeleteAccountSection } from "../deleteAccountSection";
 import * as styles from "./style.css";
 
 const settings = [
@@ -21,6 +22,7 @@ const settings = [
 
 type SettingKey = (typeof settings)[number]["key"];
 type SettingState = Record<SettingKey, boolean>;
+
 type SettingWidgetProps = {
   onSettingsChange?: (settings: SettingState) => void;
 };
@@ -35,7 +37,6 @@ export const SettingWidget = ({ onSettingsChange }: SettingWidgetProps) => {
   const [values, setValues] = useState<SettingState>(() => {
     const saved = localStorage.getItem("grow-pet-settings");
     if (!saved) return defaultSettings;
-
     try {
       return { ...defaultSettings, ...JSON.parse(saved) };
     } catch {
@@ -73,6 +74,8 @@ export const SettingWidget = ({ onSettingsChange }: SettingWidgetProps) => {
           ))}
         </div>
       </section>
+
+      <DeleteAccountSection />
     </div>
   );
 };
