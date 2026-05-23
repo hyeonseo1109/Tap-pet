@@ -48,13 +48,25 @@ const stageY: Record<CharacterStage, number> = {
 
 const formatDate = (date?: string | null) => {
   if (!date) return "기록 준비 중";
-  const addedAt = new Date(date);
-  return `${addedAt.getFullYear()}년 ${addedAt.getMonth() + 1}월 ${addedAt.getDate()}일`;
+  const d = new Date(date);
+  return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
 };
 
-const PetPortrait = ({ stage }: { stage: CharacterStage }) => (
+/** 대표펫 초상화 - 크게 */
+const MainPetPortrait = ({ stage }: { stage: CharacterStage }) => (
   <div
     className={styles.petPortrait}
+    style={{
+      backgroundImage: "url('/idle.png')",
+      backgroundPosition: `0 -${stageY[stage]}px`,
+    }}
+  />
+);
+
+/** 침실 펫 초상화 - 작게 */
+const RestPetPortrait = ({ stage }: { stage: CharacterStage }) => (
+  <div
+    className={styles.restPetPortrait}
     style={{
       backgroundImage: "url('/idle.png')",
       backgroundPosition: `0 -${stageY[stage]}px`,
@@ -169,6 +181,7 @@ export const HomeWidget = ({
     () => pets.filter((pet) => pet.id !== mainPet?.id),
     [mainPet?.id, pets],
   );
+
   const mainPetXp = getPetXp(mainPet);
   const mainPetStage = xpLevel(mainPetXp);
   const categoryXp = Object.entries(xpCategoryLabels).map(([key, label]) => [
@@ -204,7 +217,7 @@ export const HomeWidget = ({
         {!isLoading && mainPet && (
           <div className={styles.mainPetCard}>
             <div className={styles.portraitFrame}>
-              <PetPortrait stage={mainPetStage} />
+              <MainPetPortrait stage={mainPetStage} />
             </div>
 
             <div className={styles.petInfo}>
@@ -274,7 +287,7 @@ export const HomeWidget = ({
             const petStage = xpLevel(getPetXp(pet));
             return (
               <article className={styles.restCard} key={pet.id}>
-                <PetPortrait stage={petStage} />
+                <RestPetPortrait stage={petStage} />
                 <div>
                   <strong>{pet.name}</strong>
                   <span>

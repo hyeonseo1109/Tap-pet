@@ -76,11 +76,23 @@ export const portraitFrame = style({
   boxShadow: "inset 0 0 0 4px #b7d17c",
 });
 
+/* 대표펫 - 크게 */
 export const petPortrait = style({
   width: 52,
   height: 64,
   backgroundRepeat: "no-repeat",
   imageRendering: "pixelated",
+  transform: "scale(2.5)",
+});
+
+/* 침실 펫 - 작게 */
+export const restPetPortrait = style({
+  width: 52,
+  height: 64,
+  backgroundRepeat: "no-repeat",
+  imageRendering: "pixelated",
+  transform: "scale(1)",
+  flexShrink: 0,
 });
 
 export const petInfo = style({
