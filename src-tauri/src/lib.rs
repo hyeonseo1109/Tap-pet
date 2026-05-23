@@ -3,38 +3,7 @@ use tauri::{AppHandle, Emitter, Listener, Manager, WebviewUrl, WebviewWindowBuil
 
 static LISTENING: AtomicBool = AtomicBool::new(true);
 
-// ── macOS: CGEventTap ──────────────────────────────────────────────────────
-#[cfg(target_os = "macos")]
-fn check_accessibility_permission() -> bool {
-    use core_graphics::event::CGEventTap;
-    // AXIsProcessTrusted() 대신 실제 tap 생성 시도로 권한 확인
-    // trusted_with_prompt = true 로 시스템 팝업 유도
-    unsafe {
-        // AXIsProcessTrustedWithOptions FFI
-        #[link(name = "ApplicationServices", kind = "framework")]
-        extern "C" {
-            fn AXIsProcessTrustedWithOptions(options: *const std::ffi::c_void) -> bool;
-        }
-
-        // CFDictionary 없이 NULL 넘기면 팝업 없이 확인만
-        // 팝업을 띄우려면 kAXTrustedCheckOptionPrompt = true 딕셔너리 필요
-        // 간단히: NULL → 현재 상태만 반환
-        AXIsProcessTrustedWithOptions(std::ptr::null())
-    }
-}
-
-#[cfg(target_os = "macos")]
-fn request_accessibility_permission() {
-    // 시스템 설정 > 개인 정보 보호 > 손쉬운 사용 팝업 띄우기
-    std::process::Command::new("osascript")
-        .args([
-            "-e",
-            r#"tell application "System Events" to display dialog "Grow Pet이 전역 키 입력을 감지하려면 '손쉬운 사용' 권한이 필요합니다.\n\n시스템 설정 > 개인 정보 보호 및 보안 > 손쉬운 사용에서 앱을 허용해 주세요." buttons {"확인"} default button 1"#,
-        ])
-        .spawn()
-        .ok();
-}
-
+// ── macOS ──────────────────────────────────────────────────────────────────
 #[cfg(target_os = "macos")]
 fn start_key_listener(app_handle: AppHandle) {
     use core_foundation::runloop::{kCFRunLoopCommonModes, CFRunLoop};
@@ -42,7 +11,13 @@ fn start_key_listener(app_handle: AppHandle) {
         CGEventTap, CGEventTapLocation, CGEventTapOptions, CGEventTapPlacement, CGEventType,
     };
 
+    // CGEventTap은 반드시 CFRunLoop가 살아있는 스레드에서 생성+실행해야 함.
+    // 메인 스레드 RunLoop를 직접 쓰면 UI가 블로킹되므로,
+    // 새 스레드에서 CFRunLoop::run_current()로 독립 RunLoop를 돌린다.
+    // (HID tap은 메인 스레드 제약 없음 — SessionEventTap만 메인 필요)
     std::thread::spawn(move || {
+        let handle_clone = app_handle.clone();
+
         let tap = CGEventTap::new(
             CGEventTapLocation::HID,
             CGEventTapPlacement::HeadInsertEventTap,
@@ -50,7 +25,7 @@ fn start_key_listener(app_handle: AppHandle) {
             vec![CGEventType::KeyDown],
             move |_, _, _| {
                 if LISTENING.load(Ordering::Relaxed) {
-                    let _ = app_handle.emit("global-keypress", ());
+                    let _ = handle_clone.emit("global-keypress", ());
                 }
                 None
             },
@@ -58,21 +33,36 @@ fn start_key_listener(app_handle: AppHandle) {
 
         match tap {
             Ok(tap) => {
-                let loop_source = tap.mach_port.create_runloop_source(0).unwrap();
+                let loop_source = tap
+                    .mach_port
+                    .create_runloop_source(0)
+                    .expect("CFRunLoopSource 생성 실패");
                 let run_loop = CFRunLoop::get_current();
                 run_loop.add_source(&loop_source, unsafe { kCFRunLoopCommonModes });
                 tap.enable();
+                // 이 스레드의 RunLoop를 영구 구동 — 키 이벤트 수신 루프
                 CFRunLoop::run_current();
             }
             Err(_) => {
-                eprintln!("[grow-pet] CGEventTap 생성 실패 → 손쉬운 사용 권한을 확인하세요");
-                request_accessibility_permission();
+                eprintln!(
+                    "[grow-pet] CGEventTap 생성 실패 — \
+                     시스템 설정 > 개인 정보 보호 > 손쉬운 사용에서 앱을 허용해 주세요."
+                );
+                // 사용자에게 안내 다이얼로그
+                let _ = app_handle.emit("accessibility-permission-needed", ());
+                std::process::Command::new("osascript")
+                    .args([
+                        "-e",
+                        r#"display dialog "Grow Pet이 전역 키 입력을 감지하려면 '손쉬운 사용' 권한이 필요합니다.\n\n시스템 설정 > 개인 정보 보호 및 보안 > 손쉬운 사용에서 앱을 허용한 뒤 재시작해 주세요." buttons {"확인"} default button 1"#,
+                    ])
+                    .spawn()
+                    .ok();
             }
         }
     });
 }
 
-// ── Windows / Linux: rdev ──────────────────────────────────────────────────
+// ── Windows / Linux ────────────────────────────────────────────────────────
 #[cfg(not(target_os = "macos"))]
 fn start_key_listener(app_handle: AppHandle) {
     use rdev::{listen, Event, EventType};
@@ -133,12 +123,17 @@ fn focus_main(app: tauri::AppHandle) {
     }
 }
 
-/// macOS: 손쉬운 사용 권한 여부 반환 (프론트에서 권한 안내 UI 표시용)
 #[tauri::command]
 fn check_accessibility() -> bool {
     #[cfg(target_os = "macos")]
     {
-        check_accessibility_permission()
+        unsafe {
+            #[link(name = "ApplicationServices", kind = "framework")]
+            extern "C" {
+                fn AXIsProcessTrustedWithOptions(options: *const std::ffi::c_void) -> bool;
+            }
+            AXIsProcessTrustedWithOptions(std::ptr::null())
+        }
     }
     #[cfg(not(target_os = "macos"))]
     {
@@ -162,10 +157,12 @@ pub fn run() {
                 .map(|m| m.size().clone());
 
             let (ox, oy) = screen
-                .map(|s| (s.width as f64 - 160.0, s.height as f64 - 160.0))
-                .unwrap_or((1760.0, 920.0));
+                .map(|s| (s.width as f64 - 200.0, s.height as f64 - 200.0))
+                .unwrap_or((1760.0, 880.0));
 
-            let overlay = WebviewWindowBuilder::new(
+            // ★ 핵심: _ 로 받으면 즉시 drop됨 → 반드시 변수명으로 바인딩
+            // Tauri가 내부적으로 윈도우를 관리하므로 _overlay는 경고 억제용
+            let _overlay = WebviewWindowBuilder::new(
                 app,
                 "overlay",
                 WebviewUrl::App("overlay.html".into()),
@@ -176,13 +173,9 @@ pub fn run() {
             .always_on_top(true)
             .skip_taskbar(true)
             .resizable(false)
-            .inner_size(160.0, 160.0)
+            .inner_size(200.0, 200.0)
             .position(ox, oy)
             .build()?;
-
-            // macOS: 클릭이 아래 앱으로 통과되도록 (마우스 드래그는 JS에서 직접 처리)
-            // ignore_cursor_events는 드래그를 막으므로 사용 안 함
-            // 대신 오버레이 배경을 투명하게 유지
 
             // ── 딥링크 → 메인 윈도우 포워딩 ──────────────────
             let handle = app.handle().clone();
@@ -192,7 +185,7 @@ pub fn run() {
                 }
             });
 
-            // ── 글로벌 키 리스너 ──────────────────────────────
+            // ── 글로벌 키 리스너 시작 ─────────────────────────
             let handle2 = app.handle().clone();
             start_key_listener(handle2);
 
