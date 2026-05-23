@@ -18,6 +18,7 @@ import { useGameEngine } from "@features/game-engine/hook/useGameEngine";
 import { usePresence } from "@features/presence/hook/usePresence";
 import { useFriendTyping } from "@features/presence/hook/useFriendTyping";
 import { supabase } from "@shared/api";
+import { isTauri } from "@tauri-apps/api/core";
 // import { isTauri } from "@tauri-apps/api/core";
 
 type Tab = "home" | "friend" | "stats" | "setting";
@@ -288,7 +289,7 @@ export const HomePage = () => {
 
   return (
     <div className={styles.homePage}>
-      {mainPet && appSettings.showOverlay && (
+      {mainPet && appSettings.showOverlay && !isTauri() && (
         <CharacterImage
           stage={mainPetStage}
           state={petState}
