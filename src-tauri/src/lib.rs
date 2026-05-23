@@ -73,6 +73,18 @@ fn move_overlay(app: tauri::AppHandle, x: f64, y: f64) {
 }
 
 #[tauri::command]
+fn move_overlay_by(app: tauri::AppHandle, dx: i32, dy: i32) {
+    if let Some(w) = app.get_webview_window("overlay") {
+        if let Ok(pos) = w.outer_position() {
+            let _ = w.set_position(tauri::PhysicalPosition {
+                x: pos.x + dx,
+                y: pos.y + dy,
+            });
+        }
+    }
+}
+
+#[tauri::command]
 fn set_overlay_visible(app: tauri::AppHandle, visible: bool) {
     if let Some(w) = app.get_webview_window("overlay") {
         let _ = if visible { w.show() } else { w.hide() };
@@ -92,6 +104,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_deep_link::init())
+        .plugin(tauri_plugin_shell::init())
         .setup(|app| {
     // ── 오버레이 윈도우 생성 ──────────────────────────────
     let screen = app
@@ -110,7 +123,7 @@ pub fn run() {
         WebviewUrl::App("overlay.html".into()),
     )
     .title("grow-pet-overlay")
-    // .transparent(true)  ← 제거, Tauri v2에서는 window config로 설정
+    .transparent(true)
     .decorations(false)
     .always_on_top(true)
     .skip_taskbar(true)
@@ -136,6 +149,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             set_listening,
             move_overlay,
+            move_overlay_by,
             set_overlay_visible,
             focus_main
         ])

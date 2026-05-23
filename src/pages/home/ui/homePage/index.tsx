@@ -18,6 +18,7 @@ import { useGameEngine } from "@features/game-engine/hook/useGameEngine";
 import { usePresence } from "@features/presence/hook/usePresence";
 import { useFriendTyping } from "@features/presence/hook/useFriendTyping";
 import { supabase } from "@shared/api";
+// import { isTauri } from "@tauri-apps/api/core";
 
 type Tab = "home" | "friend" | "stats" | "setting";
 
