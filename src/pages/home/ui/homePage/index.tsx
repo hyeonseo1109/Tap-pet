@@ -16,6 +16,7 @@ import {
 } from "@entities/character/model";
 import { useGameEngine } from "@features/game-engine/hook/useGameEngine";
 import { usePresence } from "@features/presence/hook/usePresence";
+import { useFriendTyping } from "@features/presence/hook/useFriendTyping";
 import { supabase } from "@shared/api";
 
 type Tab = "home" | "friend" | "stats" | "setting";
@@ -39,6 +40,9 @@ export const HomePage = () => {
   const [pets, setPets] = useState<Pet[]>([]);
   const [isLoadingPets, setIsLoadingPets] = useState(true);
   const [friendProfiles, setFriendProfiles] = useState<FriendProfile[]>([]);
+  const [hiddenOverlayIds, setHiddenOverlayIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [showOverlay, setShowOverlay] = useState(() => {
     const saved = localStorage.getItem("grow-pet-settings");
     if (!saved) return true;
@@ -51,7 +55,6 @@ export const HomePage = () => {
 
   const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingPetRef = useRef<Pet | null>(null);
-  // 초기 로드를 한 번만 실행하기 위한 ref
   const initialLoadDoneRef = useRef(false);
 
   const mainPet = useMemo(
@@ -63,25 +66,21 @@ export const HomePage = () => {
     () => friendProfiles.map((f) => f.id),
     [friendProfiles],
   );
+
   const { onlineFriendIds } = usePresence({ userId: myId, friendIds });
+  const { typingFriendIds, broadcastTyping } = useFriendTyping(myId, friendIds);
 
   const onlineFriendsForOverlay = useMemo(
     () =>
       friendProfiles
-        .filter((f) => onlineFriendIds.has(f.id))
-        .map((f) => {
-          console.log(
-            "친구 데이터:",
-            f.nickname,
-            f.main_pet,
-            getPetXp(f.main_pet),
-          ); // 추가
-          return {
-            nickname: f.nickname,
-            stage: xpLevel(getPetXp(f.main_pet)),
-          };
-        }),
-    [friendProfiles, onlineFriendIds],
+        .filter((f) => onlineFriendIds.has(f.id) && !hiddenOverlayIds.has(f.id))
+        .map((f) => ({
+          id: f.id,
+          nickname: f.nickname,
+          stage: xpLevel(getPetXp(f.main_pet)),
+          isTyping: typingFriendIds.has(f.id),
+        })),
+    [friendProfiles, onlineFriendIds, hiddenOverlayIds, typingFriendIds],
   );
 
   const persistPetStats = useCallback(async (pet: Pet) => {
@@ -164,7 +163,6 @@ export const HomePage = () => {
           .eq("owner_id", p.id)
           .order("is_main", { ascending: false })
           .limit(1);
-        console.log("petRows 원본:", p.nickname, p.id, petRows);
         return {
           id: p.id,
           nickname: p.nickname,
@@ -175,11 +173,9 @@ export const HomePage = () => {
     setFriendProfiles(enriched);
   }, []);
 
-  // 초기 로드 - ref로 한 번만 실행해서 cascading renders 경고 방지
   useEffect(() => {
     if (initialLoadDoneRef.current) return;
     initialLoadDoneRef.current = true;
-
     const run = async () => {
       await reloadPets();
       await reloadFriendProfiles();
@@ -196,6 +192,7 @@ export const HomePage = () => {
 
   const handleTyping = useCallback(
     (category: XpCategory) => {
+      broadcastTyping();
       if (!mainPet) return;
       setPets((currentPets) =>
         currentPets.map((pet) => {
@@ -212,7 +209,7 @@ export const HomePage = () => {
         }),
       );
     },
-    [mainPet, schedulePersist],
+    [mainPet, schedulePersist, broadcastTyping],
   );
 
   const { state: petState, animationSpeedRef } = useGameEngine({
@@ -233,7 +230,10 @@ export const HomePage = () => {
       )}
 
       {showOverlay && (
-        <FriendPetOverlay onlineFriends={onlineFriendsForOverlay} />
+        <FriendPetOverlay
+          onlineFriends={onlineFriendsForOverlay}
+          onHide={(id) => setHiddenOverlayIds((prev) => new Set([...prev, id]))}
+        />
       )}
 
       <div className={styles.homeWidget}>
@@ -320,6 +320,14 @@ export const HomePage = () => {
           {tab === "friend" && (
             <FriendWidget
               onlineFriendIds={onlineFriendIds}
+              hiddenOverlayIds={hiddenOverlayIds}
+              onShowFriend={(id) =>
+                setHiddenOverlayIds((prev) => {
+                  const next = new Set(prev);
+                  next.delete(id);
+                  return next;
+                })
+              }
               onFriendsChange={reloadFriendProfiles}
             />
           )}

@@ -20,11 +20,15 @@ type FriendProfile = {
 
 type FriendWidgetProps = {
   onlineFriendIds: Set<string>;
+  hiddenOverlayIds: Set<string>;
+  onShowFriend: (id: string) => void;
   onFriendsChange?: () => void;
 };
 
 export const FriendWidget = ({
   onlineFriendIds,
+  hiddenOverlayIds,
+  onShowFriend,
   onFriendsChange,
 }: FriendWidgetProps) => {
   const [searchNickname, setSearchNickname] = useState("");
@@ -320,6 +324,15 @@ export const FriendWidget = ({
                     />
                     {isOnline && (
                       <span className={styles.onlineLabel}>접속 중</span>
+                    )}
+                    {isOnline && hiddenOverlayIds.has(friend.id) && (
+                      <button
+                        className={styles.showOverlayButton}
+                        type="button"
+                        onClick={() => onShowFriend(friend.id)}
+                      >
+                        펫 데려오기
+                      </button>
                     )}
                   </div>
                   {pet ? (

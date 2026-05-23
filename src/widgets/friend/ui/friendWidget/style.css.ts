@@ -245,3 +245,13 @@ export const emptyText = style({
   fontWeight: 800,
   margin: 0,
 });
+
+export const showOverlayButton = style({
+  border: "2px solid #45613b",
+  background: "#84a965",
+  color: "#fff8df",
+  padding: "1px 8px",
+  fontWeight: 900,
+  fontSize: 11,
+  borderRadius: 2,
+});
