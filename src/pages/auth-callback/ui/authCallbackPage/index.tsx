@@ -3,52 +3,94 @@ import { supabase } from "@shared/api";
 import { useNavigate } from "react-router-dom";
 import * as styles from "./style.css";
 
+// 타우리 환경 감지
+const isTauri = () => typeof window !== "undefined" && "__TAURI__" in window;
+
+const navigateAfterAuth = async (navigate: ReturnType<typeof useNavigate>) => {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    navigate("/login-page");
+    return;
+  }
+
+  const { data: profile } = await supabase
+    .from("users_profile")
+    .select("*")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile) {
+    navigate("/nickname");
+    return;
+  }
+
+  const { data: pets } = await supabase
+    .from("pets")
+    .select("id")
+    .eq("owner_id", user.id)
+    .limit(1);
+
+  navigate(pets?.length ? "/main-page" : "/select-egg");
+};
+
 export const AuthCallbackPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkProfile = async () => {
+    if (isTauri()) {
+      // 타우리: 딥링크 URL에서 토큰을 파싱해서 세션 복원
+      import("@tauri-apps/api/event").then(({ listen }) => {
+        // lib.rs에서 포워딩해주는 deep-link-url 이벤트 수신
+        listen<string>("deep-link-url", async (event) => {
+          const raw = event.payload;
+          // "growpet://auth/callback#access_token=...&refresh_token=..."
+          const hash = raw.includes("#")
+            ? raw.split("#")[1]
+            : (raw.split("?")[1] ?? "");
+          const params = new URLSearchParams(hash);
+          const accessToken = params.get("access_token");
+          const refreshToken = params.get("refresh_token");
+
+          if (accessToken && refreshToken) {
+            await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+          }
+
+          await navigateAfterAuth(navigate);
+        });
+
+        // 딥링크가 이미 처리된 경우(앱 실행 중 콜백 도착)를 대비해
+        // 현재 세션도 바로 확인
+        navigateAfterAuth(navigate);
+      });
+    } else {
+      // 웹: URL 해시에 토큰이 있으면 Supabase가 자동 처리
+      // onAuthStateChange가 SIGNED_IN을 발생시킬 때까지 대기
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange(async (event) => {
+        if (event === "SIGNED_IN") {
+          subscription.unsubscribe();
+          await navigateAfterAuth(navigate);
+        }
+      });
 
-      if (!user) {
-        navigate("/");
-        return;
-      }
+      // 이미 로그인된 상태일 수도 있으니 즉시도 확인
+      navigateAfterAuth(navigate);
 
-      const { data } = await supabase
-        .from("users_profile")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      if (!data) {
-        navigate("/nickname");
-        return;
-      }
-
-      const { data: pets } = await supabase
-        .from("pets")
-        .select("id")
-        .eq("owner_id", user.id)
-        .limit(1);
-
-      if (!pets?.length) {
-        navigate("/select-egg");
-        return;
-      }
-
-      navigate("/main-page");
-    };
-
-    checkProfile();
+      return () => subscription.unsubscribe();
+    }
   }, [navigate]);
 
+  // 스켈레톤 UI는 그대로 유지
   return (
     <div className={styles.page}>
       <div className={styles.panel}>
-        {/* 사이드 패널 스켈레톤 */}
         <div className={styles.sidePanel}>
           <div className={styles.skeletonLogo} />
           <div className={styles.skeletonNavList}>
@@ -59,7 +101,6 @@ export const AuthCallbackPage = () => {
           <div className={styles.skeletonLogout} />
         </div>
 
-        {/* 콘텐츠 영역 스켈레톤 */}
         <div className={styles.contentPanel}>
           <div className={styles.skeletonHeroCard}>
             <div className={styles.skeletonPortrait} />
