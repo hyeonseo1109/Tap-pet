@@ -302,16 +302,19 @@ export const FriendWidget = ({
 
             return (
               <article className={styles.friendCard} key={friend.id}>
-                <div
-                  className={styles.friendPet}
-                  style={
-                    pet
-                      ? {
-                          backgroundPositionY: `${16 - stageY[petStage]}px`, // stage offset 반영
-                        }
-                      : undefined
-                  }
-                />
+                <div className={styles.friendPet}>
+                  <div
+                    className={styles.friendPetSprite}
+                    style={
+                      pet
+                        ? {
+                            backgroundPositionX: "0px",
+                            backgroundPositionY: `-${stageY[petStage]}px`,
+                          }
+                        : undefined
+                    }
+                  />
+                </div>
                 <div className={styles.friendInfo}>
                   <div className={styles.friendName}>
                     <strong>{friend.nickname}</strong>

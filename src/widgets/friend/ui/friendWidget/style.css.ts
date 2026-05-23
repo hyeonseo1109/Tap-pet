@@ -135,16 +135,24 @@ export const friendCard = style({
   카드 내에서 중앙 배치를 위해 래퍼에서 overflow:hidden + 중앙 정렬
 */
 export const friendPet = style({
-  height: 120,
+  height: "150px",
   border: "3px solid #5a3525",
   backgroundColor: "#7aa16a",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  overflow: "hidden",
+});
+
+export const friendPetSprite = style({
+  width: 52,
+  height: 64,
   backgroundImage: "url('/idle.png')",
   backgroundRepeat: "no-repeat",
-  backgroundSize: "208px auto",
-  backgroundPositionX: "center",
-  backgroundPositionY: "16px",
+  backgroundSize: "auto",
   imageRendering: "pixelated",
-  transform: "scale(1)", // 50% 확대
+  transform: "scale(1.5)",
+  flexShrink: 0,
 });
 
 export const friendInfo = style({
@@ -229,7 +237,7 @@ export const hiddenText = style({
 });
 
 export const removeFriendButton = style({
-  justifySelf: "start",
+  justifySelf: "end",
   border: "2px solid #7a332a",
   background: "transparent",
   color: "#7a332a",

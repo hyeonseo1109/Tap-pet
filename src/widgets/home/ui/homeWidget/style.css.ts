@@ -82,7 +82,7 @@ export const petPortrait = style({
   height: 64,
   backgroundRepeat: "no-repeat",
   imageRendering: "pixelated",
-  transform: "scale(2.5)",
+  transform: "scale(2)",
 });
 
 /* 침실 펫 - 작게 */
@@ -167,7 +167,7 @@ globalStyle(`${xpList} div`, {
 });
 
 export const dangerButton = style({
-  justifySelf: "start",
+  justifySelf: "end",
   border: "3px solid #6f2d25",
   background: "#b95749",
   color: "#fff7df",
