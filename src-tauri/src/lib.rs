@@ -11,12 +11,10 @@ fn start_key_listener(app_handle: AppHandle) {
         CGEventTap, CGEventTapLocation, CGEventTapOptions, CGEventTapPlacement, CGEventType,
     };
 
-    // CGEventTap은 반드시 CFRunLoop가 살아있는 스레드에서 생성+실행해야 함.
-    // 메인 스레드 RunLoop를 직접 쓰면 UI가 블로킹되므로,
-    // 새 스레드에서 CFRunLoop::run_current()로 독립 RunLoop를 돌린다.
-    // (HID tap은 메인 스레드 제약 없음 — SessionEventTap만 메인 필요)
     std::thread::spawn(move || {
         let handle_clone = app_handle.clone();
+
+        eprintln!("[grow-pet] CGEventTap 생성 시도...");
 
         let tap = CGEventTap::new(
             CGEventTapLocation::HID,
@@ -24,15 +22,24 @@ fn start_key_listener(app_handle: AppHandle) {
             CGEventTapOptions::ListenOnly,
             vec![CGEventType::KeyDown],
             move |_, _, _| {
-                if LISTENING.load(Ordering::Relaxed) {
-                    let _ = handle_clone.emit("global-keypress", ());
-                }
-                None
-            },
+    eprintln!("[grow-pet] 키 감지!");
+    if LISTENING.load(Ordering::Relaxed) {
+        if let Some(window) = handle_clone.get_webview_window("main") {
+            let _ = window.emit("global-keypress", ());
+            eprintln!("[grow-pet] main 윈도우에 emit 완료");
+        } else {
+            eprintln!("[grow-pet] main 윈도우 못 찾음!");
+        }
+    }
+    None
+}
         );
+
+        eprintln!("[grow-pet] tap 결과: {:?}", tap.is_ok());
 
         match tap {
             Ok(tap) => {
+                eprintln!("[grow-pet] CGEventTap 생성 성공 — RunLoop 시작");
                 let loop_source = tap
                     .mach_port
                     .create_runloop_source(0)
@@ -40,16 +47,14 @@ fn start_key_listener(app_handle: AppHandle) {
                 let run_loop = CFRunLoop::get_current();
                 run_loop.add_source(&loop_source, unsafe { kCFRunLoopCommonModes });
                 tap.enable();
-                // 이 스레드의 RunLoop를 영구 구동 — 키 이벤트 수신 루프
                 CFRunLoop::run_current();
             }
-            Err(_) => {
+            Err(e) => {
                 eprintln!(
-                    "[grow-pet] CGEventTap 생성 실패 — \
-                     시스템 설정 > 개인 정보 보호 > 손쉬운 사용에서 앱을 허용해 주세요."
+                    "[grow-pet] CGEventTap 생성 실패 (err: {:?}) — \
+                    시스템 설정 > 개인 정보 보호 > 손쉬운 사용에서 앱을 허용해 주세요.", e
                 );
-                // 사용자에게 안내 다이얼로그
-                let _ = app_handle.emit("accessibility-permission-needed", ());
+                let _ = app_handle.emit_to("main", "accessibility-permission-needed", ());
                 std::process::Command::new("osascript")
                     .args([
                         "-e",
@@ -160,8 +165,6 @@ pub fn run() {
                 .map(|s| (s.width as f64 - 200.0, s.height as f64 - 200.0))
                 .unwrap_or((1760.0, 880.0));
 
-            // ★ 핵심: _ 로 받으면 즉시 drop됨 → 반드시 변수명으로 바인딩
-            // Tauri가 내부적으로 윈도우를 관리하므로 _overlay는 경고 억제용
             let _overlay = WebviewWindowBuilder::new(
                 app,
                 "overlay",
@@ -186,6 +189,7 @@ pub fn run() {
             });
 
             // ── 글로벌 키 리스너 시작 ─────────────────────────
+            eprintln!("[grow-pet] setup 완료 — start_key_listener 호출");
             let handle2 = app.handle().clone();
             start_key_listener(handle2);
 

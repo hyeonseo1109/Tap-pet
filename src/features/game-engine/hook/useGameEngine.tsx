@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import type { XpCategory } from "@entities/character/model";
 
 // Tauri 환경인지 판단
-const isTauri = () => typeof window !== "undefined" && "__TAURI__" in window;
+const isTauri = () =>
+  typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
 type UseGameEngineParams = {
   enabled?: boolean;
@@ -38,6 +39,7 @@ export const useGameEngine = ({
     if (!enabled) return;
 
     const handleKey = () => {
+      console.log("[grow-pet] handleKey 호출됨!");
       const now = performance.now();
       const diff = now - lastKeyTimeRef.current;
       lastKeyTimeRef.current = now;
@@ -65,13 +67,19 @@ export const useGameEngine = ({
     let unlistenFn: (() => void) | null = null;
 
     if (isTauri()) {
-      // Tauri 환경: Rust에서 보내는 글로벌 키 이벤트 수신
       import("@tauri-apps/api/event").then(({ listen }) => {
+        console.log("[grow-pet] listen 등록 시도");
         listen<void>("global-keypress", () => {
+          console.log("[grow-pet] global-keypress 수신!");
           handleKey();
-        }).then((unlisten) => {
-          unlistenFn = unlisten;
-        });
+        })
+          .then((unlisten) => {
+            console.log("[grow-pet] listen 등록 완료");
+            unlistenFn = unlisten;
+          })
+          .catch((e) => {
+            console.error("[grow-pet] listen 등록 실패", e);
+          });
       });
     } else {
       // 웹(Vercel) 환경: 기존 방식 유지
