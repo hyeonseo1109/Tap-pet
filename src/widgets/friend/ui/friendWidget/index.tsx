@@ -18,14 +18,21 @@ type FriendProfile = {
   main_pet?: Pet;
 };
 
-export const FriendWidget = () => {
+type FriendWidgetProps = {
+  onlineFriendIds: Set<string>;
+  onFriendsChange?: () => void;
+};
+
+export const FriendWidget = ({
+  onlineFriendIds,
+  onFriendsChange,
+}: FriendWidgetProps) => {
   const [searchNickname, setSearchNickname] = useState("");
   const [searchError, setSearchError] = useState("");
   const [searchSuccess, setSearchSuccess] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [friends, setFriends] = useState<FriendProfile[]>([]);
   const [isLoadingFriends, setIsLoadingFriends] = useState(true);
-  // IME 조합 중 여부 추적
   const isComposingRef = useRef(false);
 
   const loadFriends = useCallback(async () => {
@@ -107,12 +114,7 @@ export const FriendWidget = () => {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAddFriend = async () => {
-    // IME 조합이 끝나지 않았어도 강제로 완성된 값 사용
-    // input value는 이미 최신 상태이므로 그대로 trim만 적극적으로 처리
-    const trimmed = searchNickname
-      .trim()
-      .replace(/\s+/g, " ") // 연속 공백 → 단일 공백
-      .normalize("NFC"); // 유니코드 정규화 (한글 조합 완성)
+    const trimmed = searchNickname.trim().replace(/\s+/g, " ").normalize("NFC");
 
     if (!trimmed) {
       setSearchError("닉네임을 입력해 주세요.");
@@ -128,16 +130,11 @@ export const FriendWidget = () => {
     setSearchError("");
     setSearchSuccess("");
 
-    console.log("[grow-pet] searching nickname:", JSON.stringify(trimmed));
-
-    // ilike로 대소문자/공백 무시 검색 시도
     const { data: targetProfile, error: searchErr } = await supabase
       .from("users_profile")
       .select("id, nickname")
       .ilike("nickname", trimmed)
       .maybeSingle();
-
-    console.log("[grow-pet] search result:", targetProfile, searchErr);
 
     if (searchErr) {
       setSearchError("검색 중 오류가 발생했어요: " + searchErr.message);
@@ -176,7 +173,6 @@ export const FriendWidget = () => {
     ]);
 
     if (insertError) {
-      console.error("[grow-pet] friend insert error", insertError);
       setSearchError("친구 추가 중 오류가 발생했어요: " + insertError.message);
       setIsSearching(false);
       return;
@@ -186,6 +182,7 @@ export const FriendWidget = () => {
     setSearchNickname("");
     setIsSearching(false);
     void loadFriends();
+    onFriendsChange?.();
   };
 
   const handleRemoveFriend = async (friendId: string) => {
@@ -205,6 +202,14 @@ export const FriendWidget = () => {
       );
 
     void loadFriends();
+    onFriendsChange?.();
+  };
+
+  const stageY: Record<string, number> = {
+    egg: 0,
+    baby: 64,
+    child: 128,
+    adult: 192,
   };
 
   return (
@@ -229,14 +234,10 @@ export const FriendWidget = () => {
               }}
               onCompositionEnd={(e) => {
                 isComposingRef.current = false;
-                // 조합 완료 시 input value 동기화
                 setSearchNickname(e.currentTarget.value);
               }}
               onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  // IME 조합 중이어도 Enter면 바로 검색
-                  void handleAddFriend();
-                }
+                if (e.key === "Enter") void handleAddFriend();
               }}
             />
             <button
@@ -293,12 +294,7 @@ export const FriendWidget = () => {
             const pet = friend.main_pet;
             const petXp = pet ? getPetXp(pet) : 0;
             const petStage = xpLevel(petXp);
-            const stageY: Record<string, number> = {
-              egg: 0,
-              baby: 64,
-              child: 128,
-              adult: 192,
-            };
+            const isOnline = onlineFriendIds.has(friend.id);
 
             return (
               <article className={styles.friendCard} key={friend.id}>
@@ -306,14 +302,25 @@ export const FriendWidget = () => {
                   className={styles.friendPet}
                   style={
                     pet
-                      ? { backgroundPosition: `0 -${stageY[petStage]}px` }
+                      ? {
+                          backgroundPositionX: "50%",
+                          backgroundPositionY: `-${stageY[petStage]}px`,
+                        }
                       : undefined
                   }
                 />
                 <div className={styles.friendInfo}>
                   <div className={styles.friendName}>
                     <strong>{friend.nickname}</strong>
-                    <span className={styles.offlineDot} title="오프라인" />
+                    <span
+                      className={
+                        isOnline ? styles.onlineDot : styles.offlineDot
+                      }
+                      title={isOnline ? "접속 중" : "오프라인"}
+                    />
+                    {isOnline && (
+                      <span className={styles.onlineLabel}>접속 중</span>
+                    )}
                   </div>
                   {pet ? (
                     <>
