@@ -7,10 +7,13 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "tauri": "tauri"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.38.4",
+    "@tauri-apps/api": "^2.11.0",
+    "@tauri-apps/plugin-store": "^2.4.3",
     "@vanilla-extract/css": "^1.20.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
@@ -19,6 +22,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@tauri-apps/cli": "^2.11.2",
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",

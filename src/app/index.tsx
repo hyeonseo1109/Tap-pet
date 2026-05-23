@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HomePage } from "@pages/home/ui/homePage";
 import "./global.css";
 import { LoginPage } from "@pages/login/ui";
@@ -10,7 +10,7 @@ import { SelectEggPage } from "@pages/select-egg/ui";
 export const App = () => {
   return (
     <BrowserRouter>
-      {/* <HomePage /> */}
+      <Route path="/" element={<Navigate to="/login-page" replace />} />
 
       <Routes>
         <Route path="/login-page" element={<LoginPage />} />

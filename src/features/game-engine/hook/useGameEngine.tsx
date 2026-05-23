@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { XpCategory } from "@entities/character/model";
 
+// Tauri 환경인지 판단
+const isTauri = () => typeof window !== "undefined" && "__TAURI__" in window;
+
 type UseGameEngineParams = {
   enabled?: boolean;
   onTyping?: (category: XpCategory) => void;
@@ -8,14 +11,12 @@ type UseGameEngineParams = {
 
 const inferXpCategory = (): XpCategory => {
   const activeElement = document.activeElement;
-
   if (
     activeElement instanceof HTMLInputElement ||
     activeElement instanceof HTMLTextAreaElement
   ) {
     return "creativity";
   }
-
   return "adventure";
 };
 
@@ -36,16 +37,11 @@ export const useGameEngine = ({
   useEffect(() => {
     if (!enabled) return;
 
-    const handler = (event: KeyboardEvent) => {
-      if (event.metaKey || event.ctrlKey || event.altKey) return;
-
+    const handleKey = () => {
       const now = performance.now();
-
       const diff = now - lastKeyTimeRef.current;
-
       lastKeyTimeRef.current = now;
 
-      // 애니메이션 속도 조절
       if (diff < 100) {
         animationSpeedRef.current = 80;
       } else if (diff < 300) {
@@ -59,24 +55,40 @@ export const useGameEngine = ({
       onTypingRef.current?.(inferXpCategory());
       setState("typing");
 
-      if (typingTimerRef.current) {
-        clearTimeout(typingTimerRef.current);
-      }
-
+      if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
       typingTimerRef.current = setTimeout(() => {
         setState("idle");
-
         animationSpeedRef.current = 220;
       }, 500);
     };
 
-    window.addEventListener("keydown", handler);
+    let unlistenFn: (() => void) | null = null;
+
+    if (isTauri()) {
+      // Tauri 환경: Rust에서 보내는 글로벌 키 이벤트 수신
+      import("@tauri-apps/api/event").then(({ listen }) => {
+        listen<void>("global-keypress", () => {
+          handleKey();
+        }).then((unlisten) => {
+          unlistenFn = unlisten;
+        });
+      });
+    } else {
+      // 웹(Vercel) 환경: 기존 방식 유지
+      const webHandler = (event: KeyboardEvent) => {
+        if (event.metaKey || event.ctrlKey || event.altKey) return;
+        handleKey();
+      };
+      window.addEventListener("keydown", webHandler);
+      return () => {
+        window.removeEventListener("keydown", webHandler);
+        if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+      };
+    }
 
     return () => {
-      window.removeEventListener("keydown", handler);
-      if (typingTimerRef.current) {
-        clearTimeout(typingTimerRef.current);
-      }
+      unlistenFn?.();
+      if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
     };
   }, [enabled]);
 
