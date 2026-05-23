@@ -303,7 +303,7 @@ export const FriendWidget = ({
                   style={
                     pet
                       ? {
-                          backgroundPositionX: "50%",
+                          backgroundPositionX: "0px",
                           backgroundPositionY: `-${stageY[petStage]}px`,
                         }
                       : undefined

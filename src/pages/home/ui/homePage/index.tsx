@@ -69,10 +69,18 @@ export const HomePage = () => {
     () =>
       friendProfiles
         .filter((f) => onlineFriendIds.has(f.id))
-        .map((f) => ({
-          nickname: f.nickname,
-          stage: xpLevel(getPetXp(f.main_pet)),
-        })),
+        .map((f) => {
+          console.log(
+            "친구 데이터:",
+            f.nickname,
+            f.main_pet,
+            getPetXp(f.main_pet),
+          ); // 추가
+          return {
+            nickname: f.nickname,
+            stage: xpLevel(getPetXp(f.main_pet)),
+          };
+        }),
     [friendProfiles, onlineFriendIds],
   );
 
@@ -154,8 +162,9 @@ export const HomePage = () => {
           .from("pets")
           .select("*")
           .eq("owner_id", p.id)
-          .eq("is_main", true)
+          .order("is_main", { ascending: false })
           .limit(1);
+        console.log("petRows 원본:", p.nickname, p.id, petRows);
         return {
           id: p.id,
           nickname: p.nickname,
