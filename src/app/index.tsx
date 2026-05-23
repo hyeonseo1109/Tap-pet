@@ -10,9 +10,8 @@ import { SelectEggPage } from "@pages/select-egg/ui";
 export const App = () => {
   return (
     <BrowserRouter>
-      <Route path="/" element={<Navigate to="/login-page" replace />} />
-
       <Routes>
+        <Route path="/" element={<Navigate to="/login-page" replace />} />
         <Route path="/login-page" element={<LoginPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
         <Route path="/nickname" element={<NicknamePage />} />
