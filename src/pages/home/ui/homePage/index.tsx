@@ -309,7 +309,10 @@ export const HomePage = () => {
             />
           )}
           {tab === "friend" && (
-            <FriendWidget myId={myId} onFriendsChange={reloadFriendProfiles} />
+            <FriendWidget
+              onlineFriendIds={onlineFriendIds}
+              onFriendsChange={reloadFriendProfiles}
+            />
           )}
           {tab === "stats" && <StatsWidget pets={pets} />}
           {tab === "setting" && (
