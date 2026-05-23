@@ -45,7 +45,7 @@
       "debugApplicationIdSuffix": ".debug"
     },
     "macOS": {
-      "entitlements": null,
+      "entitlements": "entitlements.plist",
       "exceptionDomain": "",
       "frameworks": [],
       "providerShortName": null,

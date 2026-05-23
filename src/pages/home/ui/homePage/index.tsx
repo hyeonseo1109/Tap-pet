@@ -19,7 +19,6 @@ import { usePresence } from "@features/presence/hook/usePresence";
 import { useFriendTyping } from "@features/presence/hook/useFriendTyping";
 import { supabase } from "@shared/api";
 import { isTauri } from "@tauri-apps/api/core";
-// import { isTauri } from "@tauri-apps/api/core";
 
 type Tab = "home" | "friend" | "stats" | "setting";
 
@@ -150,7 +149,6 @@ export const HomePage = () => {
     }
     setMyId(user.id);
 
-    // 닉네임 로드
     const { data: profile } = await supabase
       .from("users_profile")
       .select("nickname")
@@ -212,16 +210,11 @@ export const HomePage = () => {
   // 친구 펫 실시간 업데이트
   useEffect(() => {
     if (!myId) return;
-
     const channel = supabase
       .channel("friend-pets-changes")
       .on(
         "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "pets",
-        },
+        { event: "UPDATE", schema: "public", table: "pets" },
         (payload) => {
           const updatedOwnerId = (payload.new as { owner_id?: string })
             ?.owner_id;
@@ -231,7 +224,6 @@ export const HomePage = () => {
         },
       )
       .subscribe();
-
     return () => {
       void supabase.removeChannel(channel);
     };
@@ -287,8 +279,75 @@ export const HomePage = () => {
 
   const mainPetStage = xpLevel(getPetXp(mainPet));
 
+  // ── Tauri overlay 윈도우 동기화 ─────────────────────────────
+
+  // 내 펫 상태 전송
+  const syncOverlay = useCallback(
+    (stage: string, state: string, speed: number) => {
+      if (!isTauri()) return;
+      import("@tauri-apps/api/event").then(({ emit }) => {
+        void emit("pet-state", { stage, state, speed });
+      });
+    },
+    [],
+  );
+
+  useEffect(() => {
+    syncOverlay(mainPetStage, petState, animationSpeedRef.current);
+  }, [petState, mainPetStage, syncOverlay, animationSpeedRef]);
+
+  // 친구 목록 overlay 전송 (접속 중 친구가 바뀔 때마다)
+  useEffect(() => {
+    if (!isTauri()) return;
+    import("@tauri-apps/api/event").then(({ emit }) => {
+      void emit("overlay-friends", { friends: onlineFriendsForOverlay });
+    });
+  }, [onlineFriendsForOverlay]);
+
+  // overlay에서 친구 숨김 요청 수신
+  useEffect(() => {
+    if (!isTauri()) return;
+    let unlisten: (() => void) | null = null;
+    import("@tauri-apps/api/event").then(({ listen }) => {
+      listen<{ id: string }>("overlay-hide-friend", ({ payload }) => {
+        setHiddenOverlayIds((prev) => new Set([...prev, payload.id]));
+      }).then((fn) => {
+        unlisten = fn;
+      });
+    });
+    return () => {
+      unlisten?.();
+    };
+  }, []);
+
+  // overlay에 친구 다시 보이기 요청 전송
+  const showFriendOnOverlay = useCallback((id: string) => {
+    setHiddenOverlayIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+    if (!isTauri()) return;
+    import("@tauri-apps/api/event").then(({ emit }) => {
+      void emit("overlay-show-friend", { id });
+    });
+  }, []);
+
+  // overlay 표시/숨김 동기화
+  useEffect(() => {
+    if (!isTauri()) return;
+    import("@tauri-apps/api/core").then(({ invoke }) => {
+      void invoke("set_overlay_visible", {
+        visible: appSettings.showOverlay,
+      });
+    });
+  }, [appSettings.showOverlay]);
+
+  // ────────────────────────────────────────────────────────────
+
   return (
     <div className={styles.homePage}>
+      {/* 웹 환경에서만 인앱 오버레이 표시 */}
       {mainPet && appSettings.showOverlay && !isTauri() && (
         <CharacterImage
           stage={mainPetStage}
@@ -297,7 +356,7 @@ export const HomePage = () => {
         />
       )}
 
-      {appSettings.showOverlay && (
+      {appSettings.showOverlay && !isTauri() && (
         <FriendPetOverlay
           onlineFriends={onlineFriendsForOverlay}
           onHide={(id) => setHiddenOverlayIds((prev) => new Set([...prev, id]))}
@@ -391,13 +450,7 @@ export const HomePage = () => {
             <FriendWidget
               onlineFriendIds={onlineFriendIds}
               hiddenOverlayIds={hiddenOverlayIds}
-              onShowFriend={(id) =>
-                setHiddenOverlayIds((prev) => {
-                  const next = new Set(prev);
-                  next.delete(id);
-                  return next;
-                })
-              }
+              onShowFriend={showFriendOnOverlay}
               onFriendsChange={reloadFriendProfiles}
             />
           )}
