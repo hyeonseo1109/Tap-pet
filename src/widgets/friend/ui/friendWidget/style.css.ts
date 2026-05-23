@@ -1,4 +1,16 @@
-import { globalStyle, style } from "@vanilla-extract/css";
+import { globalStyle, keyframes, style } from "@vanilla-extract/css";
+
+const shimmer = keyframes({
+  "0%": { backgroundPosition: "-400px 0" },
+  "100%": { backgroundPosition: "400px 0" },
+});
+
+const skeletonBase = {
+  background: "linear-gradient(90deg, #d9be8a 25%, #e8d4a0 50%, #d9be8a 75%)",
+  backgroundSize: "800px 100%",
+  animation: `${shimmer} 1.4s ease infinite`,
+  borderRadius: 2,
+} as const;
 
 export const friendWidget = style({
   width: "100%",
@@ -25,7 +37,7 @@ export const friendSearch = style({
   },
 });
 
-globalStyle(`${friendSearch} span`, {
+globalStyle(`${friendSearch} > div:first-child span`, {
   color: "#7a4e34",
   fontSize: 13,
   fontWeight: 900,
@@ -87,6 +99,57 @@ export const friendList = style({
   display: "grid",
   gap: 12,
 });
+
+/* ── 스켈레톤 UI ── */
+
+export const skeletonList = style({
+  display: "grid",
+  gap: 12,
+});
+
+export const skeletonCard = style({
+  display: "grid",
+  gridTemplateColumns: "120px minmax(0, 1fr)",
+  gap: 16,
+  border: "3px solid #c4a86a",
+  background: "#e6c98e",
+  padding: 16,
+  "@media": {
+    "(max-width: 640px)": {
+      gridTemplateColumns: "1fr",
+    },
+  },
+});
+
+export const skeletonPet = style({
+  minHeight: 120,
+  ...skeletonBase,
+  border: "3px solid #c4a86a",
+});
+
+export const skeletonInfo = style({
+  display: "grid",
+  gap: 12,
+  alignContent: "start",
+});
+
+export const skeletonLine = style({
+  height: 16,
+  ...skeletonBase,
+});
+
+export const skeletonStatRow = style({
+  display: "grid",
+  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+  gap: 8,
+});
+
+export const skeletonStat = style({
+  height: 52,
+  ...skeletonBase,
+});
+
+/* ── 실제 카드 ── */
 
 export const friendCard = style({
   display: "grid",

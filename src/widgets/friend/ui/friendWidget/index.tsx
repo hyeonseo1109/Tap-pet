@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@shared/api";
 import { xpLevel } from "@entities/character/lib/xpLevel";
 import {
@@ -25,6 +25,8 @@ export const FriendWidget = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [friends, setFriends] = useState<FriendProfile[]>([]);
   const [isLoadingFriends, setIsLoadingFriends] = useState(true);
+  // IME 조합 중 여부 추적
+  const isComposingRef = useRef(false);
 
   const loadFriends = useCallback(async () => {
     const {
@@ -92,7 +94,6 @@ export const FriendWidget = () => {
     setIsLoadingFriends(false);
   }, []);
 
-  // 초기 로딩 - ref로 한 번만 실행
   useEffect(() => {
     let cancelled = false;
     const run = async () => {
@@ -106,7 +107,13 @@ export const FriendWidget = () => {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAddFriend = async () => {
-    const trimmed = searchNickname.trim();
+    // IME 조합이 끝나지 않았어도 강제로 완성된 값 사용
+    // input value는 이미 최신 상태이므로 그대로 trim만 적극적으로 처리
+    const trimmed = searchNickname
+      .trim()
+      .replace(/\s+/g, " ") // 연속 공백 → 단일 공백
+      .normalize("NFC"); // 유니코드 정규화 (한글 조합 완성)
+
     if (!trimmed) {
       setSearchError("닉네임을 입력해 주세요.");
       return;
@@ -121,18 +128,19 @@ export const FriendWidget = () => {
     setSearchError("");
     setSearchSuccess("");
 
-    console.log("[grow-pet] searching nickname:", trimmed);
+    console.log("[grow-pet] searching nickname:", JSON.stringify(trimmed));
 
+    // ilike로 대소문자/공백 무시 검색 시도
     const { data: targetProfile, error: searchErr } = await supabase
       .from("users_profile")
       .select("id, nickname")
-      .eq("nickname", trimmed)
+      .ilike("nickname", trimmed)
       .maybeSingle();
 
     console.log("[grow-pet] search result:", targetProfile, searchErr);
 
     if (searchErr) {
-      setSearchError("검색 중 오류가 발생했어요. 다시 시도해 주세요.");
+      setSearchError("검색 중 오류가 발생했어요: " + searchErr.message);
       setIsSearching(false);
       return;
     }
@@ -216,8 +224,19 @@ export const FriendWidget = () => {
                 if (searchError) setSearchError("");
                 if (searchSuccess) setSearchSuccess("");
               }}
+              onCompositionStart={() => {
+                isComposingRef.current = true;
+              }}
+              onCompositionEnd={(e) => {
+                isComposingRef.current = false;
+                // 조합 완료 시 input value 동기화
+                setSearchNickname(e.currentTarget.value);
+              }}
               onKeyDown={(e) => {
-                if (e.key === "Enter") void handleAddFriend();
+                if (e.key === "Enter") {
+                  // IME 조합 중이어도 Enter면 바로 검색
+                  void handleAddFriend();
+                }
               }}
             />
             <button
@@ -239,7 +258,28 @@ export const FriendWidget = () => {
 
       <section className={styles.friendList}>
         {isLoadingFriends && (
-          <p className={styles.emptyText}>친구 목록을 불러오는 중...</p>
+          <div className={styles.skeletonList}>
+            {[0, 1, 2].map((i) => (
+              <div className={styles.skeletonCard} key={i}>
+                <div className={styles.skeletonPet} />
+                <div className={styles.skeletonInfo}>
+                  <div
+                    className={styles.skeletonLine}
+                    style={{ width: "40%" }}
+                  />
+                  <div
+                    className={styles.skeletonLine}
+                    style={{ width: "60%" }}
+                  />
+                  <div className={styles.skeletonStatRow}>
+                    {[0, 1, 2, 3].map((j) => (
+                      <div className={styles.skeletonStat} key={j} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
 
         {!isLoadingFriends && friends.length === 0 && (
@@ -248,83 +288,84 @@ export const FriendWidget = () => {
           </p>
         )}
 
-        {friends.map((friend) => {
-          const pet = friend.main_pet;
-          const petXp = pet ? getPetXp(pet) : 0;
-          const petStage = xpLevel(petXp);
-          const stageY: Record<string, number> = {
-            egg: 0,
-            baby: 64,
-            child: 128,
-            adult: 192,
-          };
+        {!isLoadingFriends &&
+          friends.map((friend) => {
+            const pet = friend.main_pet;
+            const petXp = pet ? getPetXp(pet) : 0;
+            const petStage = xpLevel(petXp);
+            const stageY: Record<string, number> = {
+              egg: 0,
+              baby: 64,
+              child: 128,
+              adult: 192,
+            };
 
-          return (
-            <article className={styles.friendCard} key={friend.id}>
-              <div
-                className={styles.friendPet}
-                style={
-                  pet
-                    ? { backgroundPosition: `0 -${stageY[petStage]}px` }
-                    : undefined
-                }
-              />
-              <div className={styles.friendInfo}>
-                <div className={styles.friendName}>
-                  <strong>{friend.nickname}</strong>
-                  <span className={styles.offlineDot} title="오프라인" />
-                </div>
-                {pet ? (
-                  <>
-                    <p>
-                      {pet.name} · {stageLabel[petStage]}
-                    </p>
-                    {friend.share_details ? (
-                      <dl className={styles.statGrid}>
-                        <div>
-                          <dt>총 타수</dt>
-                          <dd>
-                            {(pet.typing_count ?? 0).toLocaleString("ko-KR")}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt>총 XP</dt>
-                          <dd>{petXp.toLocaleString("ko-KR")}</dd>
-                        </div>
-                        {Object.entries(xpCategoryLabels).map(
-                          ([key, label]) => (
-                            <div key={key}>
-                              <dt>{label}</dt>
-                              <dd>
-                                {getCategoryXp(
-                                  pet,
-                                  key as XpCategory,
-                                ).toLocaleString("ko-KR")}
-                              </dd>
-                            </div>
-                          ),
-                        )}
-                      </dl>
-                    ) : (
-                      <p className={styles.hiddenText}>
-                        이 친구는 상세 데이터를 비공개로 설정했어요.
+            return (
+              <article className={styles.friendCard} key={friend.id}>
+                <div
+                  className={styles.friendPet}
+                  style={
+                    pet
+                      ? { backgroundPosition: `0 -${stageY[petStage]}px` }
+                      : undefined
+                  }
+                />
+                <div className={styles.friendInfo}>
+                  <div className={styles.friendName}>
+                    <strong>{friend.nickname}</strong>
+                    <span className={styles.offlineDot} title="오프라인" />
+                  </div>
+                  {pet ? (
+                    <>
+                      <p>
+                        {pet.name} · {stageLabel[petStage]}
                       </p>
-                    )}
-                  </>
-                ) : (
-                  <p>아직 펫이 없어요.</p>
-                )}
-                <button
-                  className={styles.removeFriendButton}
-                  type="button"
-                  onClick={() => void handleRemoveFriend(friend.id)}
-                >
-                  친구 삭제
-                </button>
-              </div>
-            </article>
-          );
-        })}
+                      {friend.share_details ? (
+                        <dl className={styles.statGrid}>
+                          <div>
+                            <dt>총 타수</dt>
+                            <dd>
+                              {(pet.typing_count ?? 0).toLocaleString("ko-KR")}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>총 XP</dt>
+                            <dd>{petXp.toLocaleString("ko-KR")}</dd>
+                          </div>
+                          {Object.entries(xpCategoryLabels).map(
+                            ([key, label]) => (
+                              <div key={key}>
+                                <dt>{label}</dt>
+                                <dd>
+                                  {getCategoryXp(
+                                    pet,
+                                    key as XpCategory,
+                                  ).toLocaleString("ko-KR")}
+                                </dd>
+                              </div>
+                            ),
+                          )}
+                        </dl>
+                      ) : (
+                        <p className={styles.hiddenText}>
+                          이 친구는 상세 데이터를 비공개로 설정했어요.
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <p>아직 펫이 없어요.</p>
+                  )}
+                  <button
+                    className={styles.removeFriendButton}
+                    type="button"
+                    onClick={() => void handleRemoveFriend(friend.id)}
+                  >
+                    친구 삭제
+                  </button>
+                </div>
+              </article>
+            );
+          })}
       </section>
     </div>
   );
