@@ -47,6 +47,23 @@ export const logoBox = style({
   boxShadow: "inset 0 0 0 3px rgba(255, 238, 190, 0.28)",
 });
 
+export const nicknameTitle = style({
+  fontSize: "22px",
+  fontWeight: 900,
+  color: "#fff8df",
+  textShadow: "0 2px 0 #4b2b1d",
+  justifySelf: "start",
+  marginLeft: 10,
+});
+
+export const miniTitle = style({
+  fontSize: "15px",
+  fontWeight: 900,
+  color: "#fff0bc",
+  justifySelf: "end",
+  marginRight: 10,
+});
+
 globalStyle(`${logoBox} span`, {
   fontSize: 12,
   fontWeight: 900,

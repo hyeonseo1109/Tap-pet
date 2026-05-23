@@ -59,6 +59,7 @@ const loadSettings = (): AppSettings => {
 export const HomePage = () => {
   const [tab, setTab] = useState<Tab>("home");
   const [myId, setMyId] = useState<string | null>(null);
+  const [myNickname, setMyNickname] = useState<string | null>(null);
   const [pets, setPets] = useState<Pet[]>([]);
   const [isLoadingPets, setIsLoadingPets] = useState(true);
   const [friendProfiles, setFriendProfiles] = useState<FriendProfile[]>([]);
@@ -71,7 +72,6 @@ export const HomePage = () => {
   const pendingPetRef = useRef<Pet | null>(null);
   const initialLoadDoneRef = useRef(false);
   const friendIdsRef = useRef<string[]>([]);
-  // handleTyping 내부에서 최신 settings를 참조하기 위한 ref
   const appSettingsRef = useRef(appSettings);
 
   useEffect(() => {
@@ -147,6 +147,15 @@ export const HomePage = () => {
       return;
     }
     setMyId(user.id);
+
+    // 닉네임 로드
+    const { data: profile } = await supabase
+      .from("users_profile")
+      .select("nickname")
+      .eq("id", user.id)
+      .single();
+    if (profile?.nickname) setMyNickname(profile.nickname);
+
     const { data, error } = await supabase
       .from("pets")
       .select("*")
@@ -256,7 +265,6 @@ export const HomePage = () => {
             ...pet,
             total_xp: getPetXp(pet) + 1,
             typing_count: (pet.typing_count ?? 0) + 1,
-            // showCategoryXp가 꺼져 있으면 카테고리 XP는 올리지 않음
             ...(appSettingsRef.current.showCategoryXp && {
               [col]:
                 typeof pet[col] === "number" ? (pet[col] as number) + 1 : 1,
@@ -297,8 +305,10 @@ export const HomePage = () => {
       <div className={styles.homeWidget}>
         <div className={styles.sidePanel}>
           <div className={styles.logoBox}>
-            <span>Grow Pet</span>
-            <strong>작업실</strong>
+            <p className={styles.nicknameTitle}>
+              {myNickname ? `${myNickname}` : "Grow Pet"}
+            </p>
+            <p className={styles.miniTitle}>의 작업실</p>
           </div>
 
           <nav className={styles.tapWrapper}>
