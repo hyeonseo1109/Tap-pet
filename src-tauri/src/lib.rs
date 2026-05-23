@@ -3,6 +3,91 @@ use tauri::{AppHandle, Emitter, Listener, Manager, WebviewUrl, WebviewWindowBuil
 
 static LISTENING: AtomicBool = AtomicBool::new(true);
 
+// ── macOS: 현재 포커스된 앱의 bundle ID로 XP 카테고리 분류 ────────────────
+#[cfg(target_os = "macos")]
+fn get_active_app_category() -> &'static str {
+    use std::process::Command;
+
+    let output = Command::new("osascript")
+        .args(["-e", "id of app (path to frontmost application as text)"])
+        .output();
+
+    let bundle_id = match output {
+        Ok(o) => String::from_utf8_lossy(&o.stdout).trim().to_lowercase(),
+        Err(_) => return "adventure",
+    };
+
+    // 코딩 도구 → intelligence
+    if bundle_id.contains("xcode")
+        || bundle_id.contains("vscode")
+        || bundle_id.contains("visualstudio")
+        || bundle_id.contains("jetbrains")
+        || bundle_id.contains("intellij")
+        || bundle_id.contains("webstorm")
+        || bundle_id.contains("cursor")
+        || bundle_id.contains("nova")
+        || bundle_id.contains("sublime")
+        || bundle_id.contains("zed")
+        || bundle_id.contains("terminal")
+        || bundle_id.contains("iterm")
+        || bundle_id.contains("warp")
+        || bundle_id.contains("hyper")
+    {
+        return "intelligence";
+    }
+
+    // 글쓰기/창작 → creativity
+    if bundle_id.contains("word")
+        || bundle_id.contains("pages")
+        || bundle_id.contains("notes")
+        || bundle_id.contains("notion")
+        || bundle_id.contains("obsidian")
+        || bundle_id.contains("bear")
+        || bundle_id.contains("ulysses")
+        || bundle_id.contains("typora")
+        || bundle_id.contains("craft")
+        || bundle_id.contains("logseq")
+        || bundle_id.contains("textedit")
+        || bundle_id.contains("scrivener")
+        || bundle_id.contains("garageband")
+        || bundle_id.contains("logic")
+        || bundle_id.contains("ableton")
+    {
+        return "creativity";
+    }
+
+    // 채팅/소통 → social
+    if bundle_id.contains("kakao")
+        || bundle_id.contains("discord")
+        || bundle_id.contains("slack")
+        || bundle_id.contains("telegram")
+        || bundle_id.contains("whatsapp")
+        || bundle_id.contains("messages")
+        || bundle_id.contains("facetime")
+        || bundle_id.contains("zoom")
+        || bundle_id.contains("teams")
+        || bundle_id.contains("skype")
+        || bundle_id.contains("line")
+    {
+        return "social";
+    }
+
+    // 게임 → interest
+    if bundle_id.contains("steam")
+        || bundle_id.contains("epicgames")
+        || bundle_id.contains("battle.net")
+        || bundle_id.contains("gog")
+        || bundle_id.contains("itch")
+        || bundle_id.contains("minecraft")
+        || bundle_id.contains("roblox")
+    {
+        return "interest";
+    }
+
+    // 브라우저/기타 → adventure
+    "adventure"
+}
+
 // ── macOS ──────────────────────────────────────────────────────────────────
 #[cfg(target_os = "macos")]
 fn start_key_listener(app_handle: AppHandle) {
@@ -22,17 +107,15 @@ fn start_key_listener(app_handle: AppHandle) {
             CGEventTapOptions::ListenOnly,
             vec![CGEventType::KeyDown],
             move |_, _, _| {
-    eprintln!("[grow-pet] 키 감지!");
-    if LISTENING.load(Ordering::Relaxed) {
-        if let Some(window) = handle_clone.get_webview_window("main") {
-            let _ = window.emit("global-keypress", ());
-            eprintln!("[grow-pet] main 윈도우에 emit 완료");
-        } else {
-            eprintln!("[grow-pet] main 윈도우 못 찾음!");
-        }
-    }
-    None
-}
+                if LISTENING.load(Ordering::Relaxed) {
+                    let category = get_active_app_category();
+                    eprintln!("[grow-pet] 키 감지! category={}", category);
+                    if let Some(window) = handle_clone.get_webview_window("main") {
+                        let _ = window.emit("global-keypress", category);
+                    }
+                }
+                None
+            },
         );
 
         eprintln!("[grow-pet] tap 결과: {:?}", tap.is_ok());
@@ -52,9 +135,12 @@ fn start_key_listener(app_handle: AppHandle) {
             Err(e) => {
                 eprintln!(
                     "[grow-pet] CGEventTap 생성 실패 (err: {:?}) — \
-                    시스템 설정 > 개인 정보 보호 > 손쉬운 사용에서 앱을 허용해 주세요.", e
+                    시스템 설정 > 개인 정보 보호 > 손쉬운 사용에서 앱을 허용해 주세요.",
+                    e
                 );
-                let _ = app_handle.emit_to("main", "accessibility-permission-needed", ());
+                if let Some(window) = app_handle.get_webview_window("main") {
+                    let _ = window.emit("accessibility-permission-needed", ());
+                }
                 std::process::Command::new("osascript")
                     .args([
                         "-e",
@@ -77,7 +163,7 @@ fn start_key_listener(app_handle: AppHandle) {
                 return;
             }
             if let EventType::KeyPress(_) = event.event_type {
-                let _ = app_handle.emit("global-keypress", ());
+                let _ = app_handle.emit("global-keypress", "adventure");
             }
         });
         if let Err(e) = result {
@@ -162,8 +248,13 @@ pub fn run() {
                 .map(|m| m.size().clone());
 
             let (ox, oy) = screen
-                .map(|s| (s.width as f64 - 200.0, s.height as f64 - 200.0))
-                .unwrap_or((1760.0, 880.0));
+    .map(|s| {
+        // 물리적 픽셀을 논리적 픽셀로 변환 (scale factor 고려)
+        let w = s.width as f64;
+        let h = s.height as f64;
+        (w / 2.0 - 200.0, h / 2.0 - 200.0)
+    })
+    .unwrap_or((900.0, 700.0));
 
             let _overlay = WebviewWindowBuilder::new(
                 app,

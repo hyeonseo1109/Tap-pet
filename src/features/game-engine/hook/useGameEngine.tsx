@@ -37,8 +37,8 @@ export const useGameEngine = ({
 
   useEffect(() => {
     if (!enabled) return;
-
-    const handleKey = () => {
+    console.log("[grow-pet] useGameEngine effect 실행!");
+    const handleKey = (category?: XpCategory) => {
       console.log("[grow-pet] handleKey 호출됨!");
       const now = performance.now();
       const diff = now - lastKeyTimeRef.current;
@@ -54,7 +54,7 @@ export const useGameEngine = ({
         animationSpeedRef.current = 400;
       }
 
-      onTypingRef.current?.(inferXpCategory());
+      onTypingRef.current?.(category ?? inferXpCategory());
       setState("typing");
 
       if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
@@ -67,20 +67,26 @@ export const useGameEngine = ({
     let unlistenFn: (() => void) | null = null;
 
     if (isTauri()) {
+      let cancelled = false;
+
       import("@tauri-apps/api/event").then(({ listen }) => {
-        console.log("[grow-pet] listen 등록 시도");
-        listen<void>("global-keypress", () => {
-          console.log("[grow-pet] global-keypress 수신!");
-          handleKey();
-        })
-          .then((unlisten) => {
-            console.log("[grow-pet] listen 등록 완료");
+        if (cancelled) return; // 이미 cleanup됐으면 등록 안 함
+        listen<string>("global-keypress", (event) => {
+          handleKey(event.payload as XpCategory);
+        }).then((unlisten) => {
+          if (cancelled) {
+            unlisten(); // 이미 cleanup됐으면 즉시 해제
+          } else {
             unlistenFn = unlisten;
-          })
-          .catch((e) => {
-            console.error("[grow-pet] listen 등록 실패", e);
-          });
+          }
+        });
       });
+
+      return () => {
+        cancelled = true;
+        unlistenFn?.();
+        if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+      };
     } else {
       // 웹(Vercel) 환경: 기존 방식 유지
       const webHandler = (event: KeyboardEvent) => {
