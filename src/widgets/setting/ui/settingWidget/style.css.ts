@@ -8,12 +8,22 @@ export const settingWidget = style({
   display: "grid",
   alignContent: "start",
   gap: 18,
+  "@media": {
+    "(max-width: 520px)": {
+      padding: 12,
+    },
+  },
 });
 
 export const settingPanel = style({
   border: "3px solid #5a3525",
   background: "#f6e2b5",
   padding: 18,
+  "@media": {
+    "(max-width: 520px)": {
+      padding: 12,
+    },
+  },
 });
 
 globalStyle(`${settingPanel} > span`, {
@@ -40,6 +50,12 @@ export const settingRow = style({
   border: "3px solid #7a4e34",
   background: "#fff5cf",
   padding: 14,
+  "@media": {
+    "(max-width: 520px)": {
+      gridTemplateColumns: "1fr",
+      gap: 10,
+    },
+  },
 });
 
 globalStyle(`${settingRow} div`, {
@@ -71,6 +87,11 @@ export const volumeRow = style({
   border: "3px solid #7a4e34",
   background: "#fff5cf",
   padding: 14,
+  "@media": {
+    "(max-width: 620px)": {
+      gridTemplateColumns: "1fr",
+    },
+  },
 });
 
 globalStyle(`${volumeRow} > div:first-child`, {
@@ -92,10 +113,12 @@ export const volumeControl = style({
   display: "flex",
   alignItems: "center",
   gap: 10,
+  flexWrap: "wrap",
 });
 
 export const volumeSlider = style({
-  width: 120,
+  width: 160,
+  maxWidth: "100%",
   accentColor: "#6f9d55",
   cursor: "pointer",
   selectors: {
@@ -112,4 +135,10 @@ export const volumeValue = style({
   color: "#7a4e34",
   minWidth: 36,
   textAlign: "right",
+});
+
+export const musicToggle = style({
+  width: 46,
+  height: 26,
+  accentColor: "#6f9d55",
 });

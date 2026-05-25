@@ -8,6 +8,13 @@ export const homeWidget = style({
   gap: 18,
   padding: 22,
   color: "#3d281f",
+  minWidth: 0,
+  "@media": {
+    "(max-width: 520px)": {
+      padding: 12,
+      gap: 12,
+    },
+  },
 });
 
 export const heroPanel = style({
@@ -15,12 +22,22 @@ export const heroPanel = style({
   background: "#f6e2b5",
   padding: 18,
   boxShadow: "inset 0 0 0 3px rgba(255, 252, 226, 0.65)",
+  "@media": {
+    "(max-width: 520px)": {
+      padding: 12,
+    },
+  },
 });
 
 export const restPanel = style({
   border: "3px solid #5a3525",
   background: "#e6c98e",
   padding: 18,
+  "@media": {
+    "(max-width: 520px)": {
+      padding: 12,
+    },
+  },
 });
 
 export const sectionTitle = style({
@@ -74,6 +91,11 @@ export const portraitFrame = style({
   border: "3px solid #5a3525",
   background: "#7aa16a",
   boxShadow: "inset 0 0 0 4px #b7d17c",
+  "@media": {
+    "(max-width: 520px)": {
+      minHeight: 140,
+    },
+  },
 });
 
 /* 대표펫 - 크게 */
@@ -106,6 +128,7 @@ globalStyle(`${petInfo} h2`, {
   fontSize: 32,
   lineHeight: 1.05,
   color: "#2e2018",
+  overflowWrap: "anywhere",
 });
 
 export const metaLabel = style({
@@ -122,6 +145,9 @@ export const infoGrid = style({
   "@media": {
     "(max-width: 820px)": {
       gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    },
+    "(max-width: 420px)": {
+      gridTemplateColumns: "1fr",
     },
   },
 });
@@ -151,6 +177,9 @@ export const xpList = style({
   "@media": {
     "(max-width: 640px)": {
       gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    },
+    "(max-width: 420px)": {
+      gridTemplateColumns: "1fr",
     },
   },
 });
@@ -189,6 +218,11 @@ export const restCard = style({
   border: "2px solid #6a442f",
   background: "#fff1c8",
   padding: "10px 12px",
+  "@media": {
+    "(max-width: 620px)": {
+      gridTemplateColumns: "52px minmax(0, 1fr)",
+    },
+  },
 });
 
 globalStyle(`${restCard} div`, {

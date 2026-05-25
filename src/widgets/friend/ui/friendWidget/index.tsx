@@ -22,6 +22,7 @@ type FriendWidgetProps = {
   onlineFriendIds: Set<string>;
   hiddenOverlayIds: Set<string>;
   onShowFriend: (id: string) => void;
+  onPokeFriend: (id: string) => boolean;
   onFriendsChange?: () => void;
 };
 
@@ -29,6 +30,7 @@ export const FriendWidget = ({
   onlineFriendIds,
   hiddenOverlayIds,
   onShowFriend,
+  onPokeFriend,
   onFriendsChange,
 }: FriendWidgetProps) => {
   const [searchNickname, setSearchNickname] = useState("");
@@ -37,6 +39,9 @@ export const FriendWidget = ({
   const [isSearching, setIsSearching] = useState(false);
   const [friends, setFriends] = useState<FriendProfile[]>([]);
   const [isLoadingFriends, setIsLoadingFriends] = useState(true);
+  const [pokeCooldownIds, setPokeCooldownIds] = useState<Set<string>>(
+    new Set(),
+  );
   const isComposingRef = useRef(false);
 
   const loadFriends = useCallback(async () => {
@@ -209,6 +214,20 @@ export const FriendWidget = ({
     onFriendsChange?.();
   };
 
+  const handlePokeFriend = (friendId: string) => {
+    const sent = onPokeFriend(friendId);
+    if (!sent) return;
+
+    setPokeCooldownIds((prev) => new Set([...prev, friendId]));
+    setTimeout(() => {
+      setPokeCooldownIds((prev) => {
+        const next = new Set(prev);
+        next.delete(friendId);
+        return next;
+      });
+    }, 5000);
+  };
+
   const stageY: Record<string, number> = {
     egg: 0,
     baby: 64,
@@ -326,6 +345,17 @@ export const FriendWidget = ({
                     />
                     {isOnline && (
                       <span className={styles.onlineLabel}>접속 중</span>
+                    )}
+                    {isOnline && (
+                      <button
+                        className={styles.pokeButton}
+                        type="button"
+                        disabled={pokeCooldownIds.has(friend.id)}
+                        onClick={() => handlePokeFriend(friend.id)}
+                        title="5초에 한 번 콕 찌르기"
+                      >
+                        콕 찌르기
+                      </button>
                     )}
                     {isOnline && hiddenOverlayIds.has(friend.id) && (
                       <button

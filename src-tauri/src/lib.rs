@@ -245,16 +245,16 @@ pub fn run() {
                 .primary_monitor()
                 .ok()
                 .flatten()
-                .map(|m| m.size().clone());
+                .map(|m| {
+                    let size = m.size().clone();
+                    let scale = m.scale_factor();
+                    (
+                        size.width as f64 / scale,
+                        size.height as f64 / scale,
+                    )
+                });
 
-            let (ox, oy) = screen
-    .map(|s| {
-        // 물리적 픽셀을 논리적 픽셀로 변환 (scale factor 고려)
-        let w = s.width as f64;
-        let h = s.height as f64;
-        (w / 2.0 - 200.0, h / 2.0 - 200.0)
-    })
-    .unwrap_or((900.0, 700.0));
+            let (overlay_width, overlay_height) = screen.unwrap_or((1200.0, 800.0));
 
             let _overlay = WebviewWindowBuilder::new(
                 app,
@@ -267,8 +267,8 @@ pub fn run() {
             .always_on_top(true)
             .skip_taskbar(true)
             .resizable(false)
-            .inner_size(200.0, 200.0)
-            .position(ox, oy)
+            .inner_size(overlay_width, overlay_height)
+            .position(0.0, 0.0)
             .build()?;
 
             // ── 딥링크 → 메인 윈도우 포워딩 ──────────────────

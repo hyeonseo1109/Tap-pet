@@ -3,5 +3,11 @@
   "identifier": "default",
   "description": "enables the default permissions",
   "windows": ["main", "overlay"],
-  "permissions": ["core:default", "shell:allow-open"]
+  "permissions": [
+    "core:default",
+    "core:window:allow-cursor-position",
+    "core:window:allow-scale-factor",
+    "core:window:allow-set-ignore-cursor-events",
+    "shell:allow-open"
+  ]
 }

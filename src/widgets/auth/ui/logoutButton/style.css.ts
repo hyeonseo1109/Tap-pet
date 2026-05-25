@@ -10,6 +10,12 @@ export const logoutButton = style({
   fontWeight: 900,
   boxShadow: "0 4px 0 #2b1a12",
   "@media": {
+    "(max-width: 980px)": {
+      minHeight: 36,
+      borderWidth: 2,
+      fontSize: 13,
+      boxShadow: "0 3px 0 #2b1a12",
+    },
     "(max-width: 760px)": {
       marginTop: 0,
     },

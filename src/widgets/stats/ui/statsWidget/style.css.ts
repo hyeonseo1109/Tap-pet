@@ -8,12 +8,23 @@ export const statsWidget = style({
   gap: 18,
   padding: 22,
   color: "#3d281f",
+  "@media": {
+    "(max-width: 520px)": {
+      padding: 12,
+      gap: 12,
+    },
+  },
 });
 
 export const summaryPanel = style({
   border: "3px solid #5a3525",
   background: "#f6e2b5",
   padding: 18,
+  "@media": {
+    "(max-width: 520px)": {
+      padding: 12,
+    },
+  },
 });
 
 globalStyle(`${summaryPanel} > span`, {
@@ -61,6 +72,11 @@ export const xpPanel = style({
   border: "3px solid #5a3525",
   background: "#e6c98e",
   padding: 18,
+  "@media": {
+    "(max-width: 520px)": {
+      padding: 12,
+    },
+  },
 });
 
 globalStyle(`${xpPanel} h3`, {
@@ -75,6 +91,9 @@ export const xpGrid = style({
   "@media": {
     "(max-width: 720px)": {
       gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    },
+    "(max-width: 420px)": {
+      gridTemplateColumns: "1fr",
     },
   },
 });

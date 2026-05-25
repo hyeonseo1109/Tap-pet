@@ -21,18 +21,19 @@ const toggleSettings = [
     description: "총 타수, 이용시간, 종류별 XP 공개",
   },
   {
-    key: "playMusic",
-    label: "배경음악 재생",
-    description: "TapPet 배경음악을 틀어둡니다",
+    key: "allowPokes",
+    label: "콕 찌르기 알림 받기",
+    description: "친구가 보낸 콕 찌르기 토스트를 표시합니다",
   },
 ] as const;
 
-type ToggleKey = (typeof toggleSettings)[number]["key"];
+type ToggleKey = (typeof toggleSettings)[number]["key"] | "playMusic";
 
 export type SettingState = {
   showOverlay: boolean;
   showCategoryXp: boolean;
   shareDetails: boolean;
+  allowPokes: boolean;
   playMusic: boolean;
   musicVolume: number;
 };
@@ -93,8 +94,8 @@ export const SettingWidget = ({ onSettingsChange }: SettingWidgetProps) => {
 
           <div className={styles.volumeRow}>
             <div>
-              <strong>배경음악 볼륨</strong>
-              <span>음악 볼륨을 조절합니다</span>
+              <strong>배경음악</strong>
+              <span>재생 여부와 볼륨을 함께 조절합니다</span>
             </div>
             <div className={styles.volumeControl}>
               <input
@@ -109,6 +110,13 @@ export const SettingWidget = ({ onSettingsChange }: SettingWidgetProps) => {
               <span className={styles.volumeValue}>
                 {values.playMusic ? `${values.musicVolume}%` : "OFF"}
               </span>
+              <input
+                checked={values.playMusic}
+                onChange={() => void handleToggle("playMusic")}
+                type="checkbox"
+                aria-label="배경음악 켜기"
+                className={styles.musicToggle}
+              />
             </div>
           </div>
         </div>

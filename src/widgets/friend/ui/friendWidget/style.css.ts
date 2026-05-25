@@ -20,6 +20,12 @@ export const friendWidget = style({
   gap: 18,
   padding: 22,
   color: "#3d281f",
+  "@media": {
+    "(max-width: 520px)": {
+      padding: 12,
+      gap: 12,
+    },
+  },
 });
 
 export const friendSearch = style({
@@ -32,6 +38,7 @@ export const friendSearch = style({
   padding: 18,
   "@media": {
     "(max-width: 760px)": { gridTemplateColumns: "1fr" },
+    "(max-width: 520px)": { padding: 12 },
   },
 });
 
@@ -52,6 +59,11 @@ export const searchLabel = style({
   display: "grid",
   gridTemplateColumns: "minmax(0, 1fr) auto",
   gap: 8,
+  "@media": {
+    "(max-width: 520px)": {
+      gridTemplateColumns: "1fr",
+    },
+  },
 });
 
 globalStyle(`${searchLabel} input`, {
@@ -114,6 +126,9 @@ export const skeletonStatRow = style({
   display: "grid",
   gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
   gap: 8,
+  "@media": {
+    "(max-width: 520px)": { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" },
+  },
 });
 export const skeletonStat = style({ height: 52, ...skeletonBase });
 
@@ -125,7 +140,10 @@ export const friendCard = style({
   border: "3px solid #5a3525",
   background: "#e6c98e",
   padding: 16,
-  "@media": { "(max-width: 640px)": { gridTemplateColumns: "1fr" } },
+  "@media": {
+    "(max-width: 640px)": { gridTemplateColumns: "1fr" },
+    "(max-width: 520px)": { padding: 12 },
+  },
 });
 
 /*
@@ -171,6 +189,7 @@ export const friendName = style({
   display: "flex",
   alignItems: "center",
   gap: 8,
+  flexWrap: "wrap",
 });
 
 globalStyle(`${friendName} strong`, { fontSize: 22 });
@@ -206,6 +225,22 @@ export const onlineLabel = style({
   borderRadius: 2,
 });
 
+export const pokeButton = style({
+  fontSize: 12,
+  fontWeight: 900,
+  color: "#fff8df",
+  background: "#c84d43",
+  border: "1px solid #8f2e2a",
+  padding: "1px 6px",
+  borderRadius: 2,
+  selectors: {
+    "&:disabled": {
+      opacity: 0.55,
+      cursor: "not-allowed",
+    },
+  },
+});
+
 export const statGrid = style({
   display: "grid",
   gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
@@ -213,6 +248,7 @@ export const statGrid = style({
   margin: 0,
   "@media": {
     "(max-width: 720px)": { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" },
+    "(max-width: 420px)": { gridTemplateColumns: "1fr" },
   },
 });
 

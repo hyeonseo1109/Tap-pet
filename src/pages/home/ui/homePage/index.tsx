@@ -17,6 +17,7 @@ import {
 import { useGameEngine } from "@features/game-engine/hook/useGameEngine";
 import { usePresence } from "@features/presence/hook/usePresence";
 import { useFriendTyping } from "@features/presence/hook/useFriendTyping";
+import { useFriendPoke } from "@features/poke/hook/useFriendPoke";
 import { supabase } from "@shared/api";
 import { isTauri } from "@tauri-apps/api/core";
 import { useBackgroundMusic } from "@features/audio/hook";
@@ -37,6 +38,11 @@ type FriendProfile = {
   main_pet?: Pet;
 };
 
+type PokeToast = {
+  id: number;
+  senderNickname: string;
+};
+
 export const HomePage = () => {
   const [tab, setTab] = useState<Tab>("home");
   const [myId, setMyId] = useState<string | null>(null);
@@ -48,6 +54,7 @@ export const HomePage = () => {
     new Set(),
   );
   const [appSettings, setAppSettings] = useState<SettingState>(loadSettings);
+  const [pokeToasts, setPokeToasts] = useState<PokeToast[]>([]);
 
   const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingPetRef = useRef<Pet | null>(null);
@@ -80,6 +87,29 @@ export const HomePage = () => {
 
   const { onlineFriendIds } = usePresence({ userId: myId, friendIds });
   const { typingFriendIds, broadcastTyping } = useFriendTyping(myId, friendIds);
+  const dismissPokeToast = useCallback((id: number) => {
+    setPokeToasts((prev) => prev.filter((toast) => toast.id !== id));
+  }, []);
+  const { sendPoke } = useFriendPoke({
+    userId: myId,
+    userNickname: myNickname,
+    friendIds,
+    enabled: appSettings.allowPokes,
+    onPoke: useCallback(
+      ({ senderNickname }) => {
+        const id = Date.now();
+        if (isTauri()) {
+          import("@tauri-apps/api/event").then(({ emit }) => {
+            void emit("overlay-poke-toast", { senderNickname });
+          });
+          return;
+        }
+        setPokeToasts((prev) => [...prev, { id, senderNickname }].slice(-3));
+        setTimeout(() => dismissPokeToast(id), 8000);
+      },
+      [dismissPokeToast],
+    ),
+  });
 
   const onlineFriendsForOverlay = useMemo(
     () =>
@@ -342,6 +372,25 @@ export const HomePage = () => {
         />
       )}
 
+      {!isTauri() && (
+        <div className={styles.pokeToastStack} aria-live="polite">
+          {pokeToasts.map((toast) => (
+            <div className={styles.pokeToast} key={toast.id}>
+              <button
+                className={styles.pokeToastClose}
+                type="button"
+                onClick={() => dismissPokeToast(toast.id)}
+                aria-label="알림 닫기"
+              >
+                X
+              </button>
+              <strong>{toast.senderNickname}님의 콕 찌르기</strong>
+              <span>안녕! 그냥 한번 찔러봤어요.</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className={styles.homeWidget}>
         <div className={styles.sidePanel}>
           <div className={styles.logoBox}>
@@ -430,6 +479,7 @@ export const HomePage = () => {
               onlineFriendIds={onlineFriendIds}
               hiddenOverlayIds={hiddenOverlayIds}
               onShowFriend={showFriendOnOverlay}
+              onPokeFriend={sendPoke}
               onFriendsChange={reloadFriendProfiles}
             />
           )}
