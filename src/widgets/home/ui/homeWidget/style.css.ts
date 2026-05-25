@@ -384,6 +384,24 @@ export const fieldError = style({
   fontWeight: 800,
 });
 
+export const modalMessage = style({
+  margin: 0,
+  color: "#ffe9aa",
+  fontSize: 16,
+  fontWeight: 800,
+  lineHeight: 1.55,
+});
+
+export const modalError = style({
+  margin: "10px 0 0",
+  border: "2px solid #8f2e2a",
+  background: "#fff0df",
+  color: "#8f2e2a",
+  padding: "8px 10px",
+  fontSize: 13,
+  fontWeight: 900,
+});
+
 export const modalActions = style({
   display: "grid",
   gridTemplateColumns: "1fr 2fr",
@@ -408,6 +426,22 @@ export const confirmButton = style({
   padding: "13px 18px",
   fontWeight: 900,
   boxShadow: "0 4px 0 #2f4f32",
+  textAlign: "center",
+  selectors: {
+    "&:disabled": {
+      opacity: 0.65,
+      cursor: "wait",
+    },
+  },
+});
+
+export const deleteConfirmButton = style({
+  border: "3px solid #6f2d25",
+  background: "#b95749",
+  color: "#fff8df",
+  padding: "13px 18px",
+  fontWeight: 900,
+  boxShadow: "0 4px 0 #6f2d25",
   textAlign: "center",
   selectors: {
     "&:disabled": {

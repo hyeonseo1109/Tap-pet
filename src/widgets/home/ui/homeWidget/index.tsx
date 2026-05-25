@@ -176,6 +176,9 @@ export const HomeWidget = ({
   pets,
 }: HomeWidgetProps) => {
   const [showAddModal, setShowAddModal] = useState(false);
+  const [pendingDeletePet, setPendingDeletePet] = useState<Pet | null>(null);
+  const [isDeletingPet, setIsDeletingPet] = useState(false);
+  const [deletePetError, setDeletePetError] = useState("");
 
   const restingPets = useMemo(
     () => pets.filter((pet) => pet.id !== mainPet?.id),
@@ -195,6 +198,24 @@ export const HomeWidget = ({
     setShowAddModal(false);
   };
 
+  const handleDeletePet = async () => {
+    if (!pendingDeletePet) return;
+    setIsDeletingPet(true);
+    setDeletePetError("");
+    try {
+      await onDeletePet(pendingDeletePet.id);
+      setPendingDeletePet(null);
+    } catch (error) {
+      setDeletePetError(
+        error instanceof Error
+          ? error.message
+          : "펫을 보내는 중 오류가 발생했어요.",
+      );
+    } finally {
+      setIsDeletingPet(false);
+    }
+  };
+
   return (
     <div className={styles.homeWidget}>
       {showAddModal && (
@@ -202,6 +223,56 @@ export const HomeWidget = ({
           onClose={() => setShowAddModal(false)}
           onConfirm={handleAddNewPet}
         />
+      )}
+      {pendingDeletePet && (
+        <div
+          className={styles.modalOverlay}
+          onClick={() => {
+            if (!isDeletingPet) setPendingDeletePet(null);
+          }}
+        >
+          <div
+            className={styles.modalPanel}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.modalHeader}>
+              <span>펫 보내기</span>
+              <button
+                className={styles.modalCloseButton}
+                type="button"
+                disabled={isDeletingPet}
+                onClick={() => setPendingDeletePet(null)}
+              >
+                ✕
+              </button>
+            </div>
+            <p className={styles.modalMessage}>
+              정말 {pendingDeletePet.name}을(를) 보내시겠습니까? 이 펫의 데이터가
+              삭제됩니다.
+            </p>
+            {deletePetError && (
+              <p className={styles.modalError}>{deletePetError}</p>
+            )}
+            <div className={styles.modalActions}>
+              <button
+                className={styles.cancelButton}
+                type="button"
+                disabled={isDeletingPet}
+                onClick={() => setPendingDeletePet(null)}
+              >
+                취소
+              </button>
+              <button
+                className={styles.deleteConfirmButton}
+                type="button"
+                disabled={isDeletingPet}
+                onClick={() => void handleDeletePet()}
+              >
+                {isDeletingPet ? "보내는 중..." : "보내기"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <section className={styles.heroPanel}>
@@ -253,7 +324,10 @@ export const HomeWidget = ({
               </div>
               <button
                 className={styles.dangerButton}
-                onClick={() => onDeletePet(mainPet.id)}
+                onClick={() => {
+                  setDeletePetError("");
+                  setPendingDeletePet(mainPet);
+                }}
                 type="button"
               >
                 보내기
@@ -299,7 +373,10 @@ export const HomeWidget = ({
                 </button>
                 <button
                   className={styles.textDangerButton}
-                  onClick={() => onDeletePet(pet.id)}
+                  onClick={() => {
+                    setDeletePetError("");
+                    setPendingDeletePet(pet);
+                  }}
                   type="button"
                 >
                   보내기

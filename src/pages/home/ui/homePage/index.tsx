@@ -405,14 +405,18 @@ export const HomePage = () => {
                 await reloadPets();
               }}
               onDeletePet={async (petId) => {
-                if (!confirm("정말 이 펫을 보내시겠습니까?")) return;
+                const {
+                  data: { user },
+                } = await supabase.auth.getUser();
+                if (!user) return;
                 const { error } = await supabase
                   .from("pets")
                   .delete()
-                  .eq("id", petId);
+                  .eq("id", petId)
+                  .eq("owner_id", user.id);
                 if (error) {
                   alert(error.message);
-                  return;
+                  throw error;
                 }
                 await reloadPets();
               }}

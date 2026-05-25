@@ -300,3 +300,99 @@ export const showOverlayButton = style({
   fontSize: 11,
   borderRadius: 2,
 });
+
+export const modalOverlay = style({
+  position: "fixed",
+  inset: 0,
+  background: "rgba(42, 25, 17, 0.72)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: 200,
+  padding: 24,
+});
+
+export const modalPanel = style({
+  width: "min(520px, 100%)",
+  border: "4px solid #4b2b1d",
+  background: "#8f5b3d",
+  color: "#fff8df",
+  padding: 24,
+  boxShadow: "0 0 0 4px #f2d8a7, 0 14px 0 rgba(52,29,18,0.45)",
+});
+
+export const modalHeader = style({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  marginBottom: 16,
+});
+
+globalStyle(`${modalHeader} span`, {
+  fontSize: 22,
+  fontWeight: 900,
+  textShadow: "0 2px 0 #4b2b1d",
+});
+
+export const modalCloseButton = style({
+  border: "2px solid #4b2b1d",
+  background: "#6d422f",
+  color: "#ffecc2",
+  width: 32,
+  height: 32,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontWeight: 900,
+});
+
+export const modalMessage = style({
+  margin: 0,
+  color: "#ffe9aa",
+  fontSize: 16,
+  fontWeight: 800,
+  lineHeight: 1.55,
+});
+
+export const modalError = style({
+  margin: "10px 0 0",
+  border: "2px solid #8f2e2a",
+  background: "#fff0df",
+  color: "#8f2e2a",
+  padding: "8px 10px",
+  fontSize: 13,
+  fontWeight: 900,
+});
+
+export const modalActions = style({
+  display: "grid",
+  gridTemplateColumns: "1fr 2fr",
+  gap: 10,
+  marginTop: 18,
+});
+
+export const cancelButton = style({
+  border: "3px solid #4b2b1d",
+  background: "#6d422f",
+  color: "#ffecc2",
+  padding: "13px 18px",
+  fontWeight: 900,
+  boxShadow: "0 4px 0 #3b2010",
+  textAlign: "center",
+});
+
+export const deleteConfirmButton = style({
+  border: "3px solid #6f2d25",
+  background: "#b95749",
+  color: "#fff8df",
+  padding: "13px 18px",
+  fontWeight: 900,
+  boxShadow: "0 4px 0 #6f2d25",
+  textAlign: "center",
+  selectors: {
+    "&:disabled": {
+      opacity: 0.65,
+      cursor: "wait",
+    },
+  },
+});

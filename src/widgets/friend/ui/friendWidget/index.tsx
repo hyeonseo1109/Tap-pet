@@ -39,6 +39,10 @@ export const FriendWidget = ({
   const [isSearching, setIsSearching] = useState(false);
   const [friends, setFriends] = useState<FriendProfile[]>([]);
   const [isLoadingFriends, setIsLoadingFriends] = useState(true);
+  const [pendingRemoveFriend, setPendingRemoveFriend] =
+    useState<FriendProfile | null>(null);
+  const [isRemovingFriend, setIsRemovingFriend] = useState(false);
+  const [removeFriendError, setRemoveFriendError] = useState("");
   const [pokeCooldownIds, setPokeCooldownIds] = useState<Set<string>>(
     new Set(),
   );
@@ -194,23 +198,44 @@ export const FriendWidget = ({
     onFriendsChange?.();
   };
 
-  const handleRemoveFriend = async (friendId: string) => {
-    const ok = confirm("친구를 삭제하시겠습니까?");
-    if (!ok) return;
-
+  const handleRemoveFriend = async () => {
+    if (!pendingRemoveFriend) return;
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return;
 
-    await supabase
+    setIsRemovingFriend(true);
+    setRemoveFriendError("");
+
+    const { error: fromMeError } = await supabase
       .from("friends")
       .delete()
-      .or(
-        `and(user_id.eq.${user.id},friend_id.eq.${friendId}),and(user_id.eq.${friendId},friend_id.eq.${user.id})`,
-      );
+      .eq("user_id", user.id)
+      .eq("friend_id", pendingRemoveFriend.id);
 
-    void loadFriends();
+    const { error: fromFriendError } = await supabase
+      .from("friends")
+      .delete()
+      .eq("user_id", pendingRemoveFriend.id)
+      .eq("friend_id", user.id);
+
+    if (fromMeError || fromFriendError) {
+      setRemoveFriendError(
+        fromMeError?.message ??
+          fromFriendError?.message ??
+          "친구 삭제 중 오류가 발생했어요.",
+      );
+      setIsRemovingFriend(false);
+      return;
+    }
+
+    setFriends((prev) =>
+      prev.filter((friend) => friend.id !== pendingRemoveFriend.id),
+    );
+    setPendingRemoveFriend(null);
+    setIsRemovingFriend(false);
+    await loadFriends();
     onFriendsChange?.();
   };
 
@@ -237,6 +262,55 @@ export const FriendWidget = ({
 
   return (
     <div className={styles.friendWidget}>
+      {pendingRemoveFriend && (
+        <div
+          className={styles.modalOverlay}
+          onClick={() => {
+            if (!isRemovingFriend) setPendingRemoveFriend(null);
+          }}
+        >
+          <div
+            className={styles.modalPanel}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.modalHeader}>
+              <span>친구 삭제</span>
+              <button
+                className={styles.modalCloseButton}
+                type="button"
+                disabled={isRemovingFriend}
+                onClick={() => setPendingRemoveFriend(null)}
+              >
+                ✕
+              </button>
+            </div>
+            <p className={styles.modalMessage}>
+              정말 {pendingRemoveFriend.nickname}님을 친구 목록에서 삭제할까요?
+            </p>
+            {removeFriendError && (
+              <p className={styles.modalError}>{removeFriendError}</p>
+            )}
+            <div className={styles.modalActions}>
+              <button
+                className={styles.cancelButton}
+                type="button"
+                disabled={isRemovingFriend}
+                onClick={() => setPendingRemoveFriend(null)}
+              >
+                취소
+              </button>
+              <button
+                className={styles.deleteConfirmButton}
+                type="button"
+                disabled={isRemovingFriend}
+                onClick={() => void handleRemoveFriend()}
+              >
+                {isRemovingFriend ? "삭제 중..." : "삭제하기"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <section className={styles.friendSearch}>
         <div>
           <span>친구 탭</span>
@@ -410,7 +484,10 @@ export const FriendWidget = ({
                   <button
                     className={styles.removeFriendButton}
                     type="button"
-                    onClick={() => void handleRemoveFriend(friend.id)}
+                    onClick={() => {
+                      setRemoveFriendError("");
+                      setPendingRemoveFriend(friend);
+                    }}
                   >
                     친구 삭제
                   </button>
