@@ -18,6 +18,7 @@ export const useFriendTyping = (userId: string | null, friendIds: string[]) => {
     if (!userId) return;
 
     const channel = supabase.channel("friend-typing");
+    const timers = timersRef.current;
 
     channel
       .on("broadcast", { event: "typing" }, ({ payload }) => {
@@ -31,7 +32,7 @@ export const useFriendTyping = (userId: string | null, friendIds: string[]) => {
         });
 
         // 기존 타이머 초기화
-        const existing = timersRef.current.get(senderId);
+        const existing = timers.get(senderId);
         if (existing) clearTimeout(existing);
 
         // 600ms 후 idle로
@@ -41,15 +42,16 @@ export const useFriendTyping = (userId: string | null, friendIds: string[]) => {
             next.delete(senderId);
             return next;
           });
-          timersRef.current.delete(senderId);
+          timers.delete(senderId);
         }, 600);
-        timersRef.current.set(senderId, timer);
+        timers.set(senderId, timer);
       })
       .subscribe();
 
     return () => {
       void supabase.removeChannel(channel);
-      timersRef.current.forEach((t) => clearTimeout(t));
+      timers.forEach((t) => clearTimeout(t));
+      timers.clear();
     };
   }, [userId]);
 

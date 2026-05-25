@@ -1,4 +1,4 @@
-import { logout } from "@features/auth/model/logout";
+import { logout } from "@features/auth/model";
 import { useNavigate } from "react-router-dom";
 import * as styles from "./style.css";
 

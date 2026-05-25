@@ -79,7 +79,7 @@ export const usePresence = ({ userId, friendIds }: UsePresenceParams) => {
       void channel.untrack();
       void supabase.removeChannel(channel);
     };
-  }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   return { onlineFriendIds };
 };

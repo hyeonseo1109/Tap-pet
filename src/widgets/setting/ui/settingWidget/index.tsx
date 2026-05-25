@@ -2,7 +2,7 @@ import { useState } from "react";
 import { supabase } from "@shared/api";
 import { DeleteAccountSection } from "../deleteAccountSection";
 import * as styles from "./style.css";
-import { loadSettings } from "@widgets/setting/model";
+import { loadSettings, type SettingState } from "@features/settings/model";
 
 const toggleSettings = [
   {
@@ -28,15 +28,6 @@ const toggleSettings = [
 ] as const;
 
 type ToggleKey = (typeof toggleSettings)[number]["key"] | "playMusic";
-
-export type SettingState = {
-  showOverlay: boolean;
-  showCategoryXp: boolean;
-  shareDetails: boolean;
-  allowPokes: boolean;
-  playMusic: boolean;
-  musicVolume: number;
-};
 
 type SettingWidgetProps = {
   onSettingsChange?: (settings: SettingState) => void;

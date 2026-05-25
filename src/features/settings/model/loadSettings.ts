@@ -1,4 +1,4 @@
-import { SettingState } from "../ui";
+import type { SettingState } from "./types";
 import { defaultSettings } from "./types";
 
 export const loadSettings = (): SettingState => {

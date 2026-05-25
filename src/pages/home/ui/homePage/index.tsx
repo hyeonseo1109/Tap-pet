@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as styles from "./style.css";
 import { HomeWidget } from "@widgets/home/ui";
-import { SettingWidget, SettingState } from "@widgets/setting/ui";
+import { SettingWidget } from "@widgets/setting/ui";
+import { loadSettings, type SettingState } from "@features/settings/model";
 import { StatsWidget } from "@widgets/stats/ui";
-import { FriendWidget } from "@widgets/friend/ui";
+import { FriendPetOverlay, FriendWidget } from "@widgets/friend/ui";
 import { LogoutButton } from "@widgets/auth/ui";
-import { CharacterImage } from "@entities/character/ui/characterImage";
-import { FriendPetOverlay } from "@widgets/friend/ui/friendPetOverlay";
+import { CharacterImage } from "@entities/character/ui";
 import { xpLevel } from "@entities/character/lib/xpLevel";
 import {
   getPetXp,
@@ -14,14 +14,15 @@ import {
   type XpCategory,
   xpCategoryColumns,
 } from "@entities/character/model";
-import { useGameEngine } from "@features/game-engine/hook/useGameEngine";
-import { usePresence } from "@features/presence/hook/usePresence";
-import { useFriendTyping } from "@features/presence/hook/useFriendTyping";
-import { useFriendPoke } from "@features/poke/hook/useFriendPoke";
+import { useGameEngine } from "@features/game-engine/hook";
+import { useFriendTyping, usePresence } from "@features/presence/hook";
+import { useFriendPoke } from "@features/poke/hook";
+import { useUsageTracker } from "@features/usage/hook";
 import { supabase } from "@shared/api";
 import { isTauri } from "@tauri-apps/api/core";
 import { useBackgroundMusic } from "@features/audio/hook";
-import { loadSettings } from "@widgets/setting/model";
+import { useOverlaySync } from "../../model/useOverlaySync";
+import { PokeToastStack, type PokeToast } from "./pokeToastStack";
 
 type Tab = "home" | "friend" | "stats" | "setting";
 
@@ -38,11 +39,6 @@ type FriendProfile = {
   main_pet?: Pet;
 };
 
-type PokeToast = {
-  id: number;
-  senderNickname: string;
-};
-
 export const HomePage = () => {
   const [tab, setTab] = useState<Tab>("home");
   const [myId, setMyId] = useState<string | null>(null);
@@ -55,15 +51,13 @@ export const HomePage = () => {
   );
   const [appSettings, setAppSettings] = useState<SettingState>(loadSettings);
   const [pokeToasts, setPokeToasts] = useState<PokeToast[]>([]);
-  const [totalUsageSeconds, setTotalUsageSeconds] = useState(0);
 
   const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingPetRef = useRef<Pet | null>(null);
   const initialLoadDoneRef = useRef(false);
   const friendIdsRef = useRef<string[]>([]);
   const appSettingsRef = useRef(appSettings);
-  const pendingUsageSecondsRef = useRef(0);
-  const isFlushingUsageRef = useRef(false);
+  const { totalUsageSeconds, setTotalUsageSeconds } = useUsageTracker(myId);
 
   useBackgroundMusic({
     play: appSettings.playMusic,
@@ -201,7 +195,7 @@ export const HomePage = () => {
     }
     setPets((data ?? []) as Pet[]);
     setIsLoadingPets(false);
-  }, []);
+  }, [setTotalUsageSeconds]);
 
   const reloadFriendProfiles = useCallback(async () => {
     const {
@@ -271,7 +265,7 @@ export const HomePage = () => {
       await reloadFriendProfiles();
     };
     void run();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [reloadFriendProfiles, reloadPets]);
 
   useEffect(() => {
     return () => {
@@ -279,54 +273,6 @@ export const HomePage = () => {
       if (pendingPetRef.current) void persistPetStats(pendingPetRef.current);
     };
   }, [persistPetStats]);
-
-  const flushUsageSeconds = useCallback(async () => {
-    if (!myId || isFlushingUsageRef.current) return;
-
-    const deltaSeconds = pendingUsageSecondsRef.current;
-    if (deltaSeconds <= 0) return;
-
-    pendingUsageSecondsRef.current = 0;
-    isFlushingUsageRef.current = true;
-
-    const { data, error } = await supabase.rpc("increment_user_usage_seconds", {
-      delta_seconds: deltaSeconds,
-    });
-
-    isFlushingUsageRef.current = false;
-
-    if (error) {
-      pendingUsageSecondsRef.current += deltaSeconds;
-      console.error("[grow-pet] usage persist error", error);
-      return;
-    }
-
-    if (typeof data === "number" || typeof data === "string") {
-      setTotalUsageSeconds(Number(data) + pendingUsageSecondsRef.current);
-    }
-  }, [myId]);
-
-  useEffect(() => {
-    if (!myId) return;
-
-    let lastTickAt = Date.now();
-    const intervalId = window.setInterval(() => {
-      const now = Date.now();
-      const deltaSeconds = Math.floor((now - lastTickAt) / 1000);
-      if (deltaSeconds <= 0) return;
-
-      lastTickAt += deltaSeconds * 1000;
-      pendingUsageSecondsRef.current += deltaSeconds;
-      setTotalUsageSeconds((prev) => prev + deltaSeconds);
-
-      if (pendingUsageSecondsRef.current >= 60) void flushUsageSeconds();
-    }, 1000);
-
-    return () => {
-      window.clearInterval(intervalId);
-      void flushUsageSeconds();
-    };
-  }, [flushUsageSeconds, myId]);
 
   const handleTyping = useCallback(
     (category: XpCategory) => {
@@ -359,67 +305,14 @@ export const HomePage = () => {
   });
 
   const mainPetStage = xpLevel(getPetXp(mainPet));
-
-  // ── Tauri overlay 윈도우 동기화 ─────────────────────────────
-
-  const syncOverlay = useCallback(
-    (stage: string, state: string, speed: number) => {
-      if (!isTauri()) return;
-      import("@tauri-apps/api/event").then(({ emit }) => {
-        void emit("pet-state", { stage, state, speed });
-      });
-    },
-    [],
-  );
-
-  useEffect(() => {
-    syncOverlay(mainPetStage, petState, animationSpeedRef.current);
-  }, [petState, mainPetStage, syncOverlay, animationSpeedRef]);
-
-  useEffect(() => {
-    if (!isTauri()) return;
-    import("@tauri-apps/api/event").then(({ emit }) => {
-      void emit("overlay-friends", { friends: onlineFriendsForOverlay });
-    });
-  }, [onlineFriendsForOverlay]);
-
-  useEffect(() => {
-    if (!isTauri()) return;
-    let unlisten: (() => void) | null = null;
-    import("@tauri-apps/api/event").then(({ listen }) => {
-      listen<{ id: string }>("overlay-hide-friend", ({ payload }) => {
-        setHiddenOverlayIds((prev) => new Set([...prev, payload.id]));
-      }).then((fn) => {
-        unlisten = fn;
-      });
-    });
-    return () => {
-      unlisten?.();
-    };
-  }, []);
-
-  const showFriendOnOverlay = useCallback((id: string) => {
-    setHiddenOverlayIds((prev) => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
-    if (!isTauri()) return;
-    import("@tauri-apps/api/event").then(({ emit }) => {
-      void emit("overlay-show-friend", { id });
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!isTauri()) return;
-    import("@tauri-apps/api/core").then(({ invoke }) => {
-      void invoke("set_overlay_visible", {
-        visible: appSettings.showOverlay,
-      });
-    });
-  }, [appSettings.showOverlay]);
-
-  // ────────────────────────────────────────────────────────────
+  const { showFriendOnOverlay } = useOverlaySync({
+    appSettings,
+    animationSpeedRef,
+    mainPetStage,
+    onlineFriendsForOverlay,
+    petState,
+    setHiddenOverlayIds,
+  });
 
   return (
     <div className={styles.homePage}>
@@ -439,22 +332,7 @@ export const HomePage = () => {
       )}
 
       {!isTauri() && (
-        <div className={styles.pokeToastStack} aria-live="polite">
-          {pokeToasts.map((toast) => (
-            <div className={styles.pokeToast} key={toast.id}>
-              <button
-                className={styles.pokeToastClose}
-                type="button"
-                onClick={() => dismissPokeToast(toast.id)}
-                aria-label="알림 닫기"
-              >
-                X
-              </button>
-              <strong>{toast.senderNickname}님의 콕 찌르기</strong>
-              <span>안녕! 그냥 한번 찔러봤어요.</span>
-            </div>
-          ))}
-        </div>
+        <PokeToastStack toasts={pokeToasts} onDismiss={dismissPokeToast} />
       )}
 
       <div className={styles.homeWidget}>

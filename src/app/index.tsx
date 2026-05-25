@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { HomePage } from "@pages/home/ui/homePage";
+import { HomePage } from "@pages/home/ui";
 import "./global.css";
 import { LoginPage } from "@pages/login/ui";
-import { ProtectedRoute } from "@shared/ui/protectedRoute";
+import { ProtectedRoute } from "@shared/ui";
 import { NicknamePage } from "@pages/nickname/ui";
 import { AuthCallbackPage } from "@pages/auth-callback/ui";
 import { SelectEggPage } from "@pages/select-egg/ui";
