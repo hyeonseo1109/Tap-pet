@@ -3,7 +3,7 @@ import { supabase } from "@shared/api";
 import { DeleteAccountSection } from "../deleteAccountSection";
 import * as styles from "./style.css";
 
-const settings = [
+const toggleSettings = [
   {
     key: "showOverlay",
     label: "펫 화면에 띄우기",
@@ -19,39 +19,58 @@ const settings = [
     label: "친구에게 상세 데이터 보이기",
     description: "총 타수, 이용시간, 종류별 XP 공개",
   },
+  {
+    key: "playMusic",
+    label: "배경음악 재생",
+    description: "TapPet 배경음악을 틀어둡니다",
+  },
 ] as const;
 
-type SettingKey = (typeof settings)[number]["key"];
-type SettingState = Record<SettingKey, boolean>;
+type ToggleKey = (typeof toggleSettings)[number]["key"];
+
+export type SettingState = {
+  showOverlay: boolean;
+  showCategoryXp: boolean;
+  shareDetails: boolean;
+  playMusic: boolean;
+  musicVolume: number;
+};
+
+export const defaultSettings: SettingState = {
+  showOverlay: true,
+  showCategoryXp: true,
+  shareDetails: true,
+  playMusic: false,
+  musicVolume: 40,
+};
+
+export const loadSettings = (): SettingState => {
+  const saved = localStorage.getItem("grow-pet-settings");
+  if (!saved) return defaultSettings;
+  try {
+    return { ...defaultSettings, ...JSON.parse(saved) };
+  } catch {
+    return defaultSettings;
+  }
+};
 
 type SettingWidgetProps = {
   onSettingsChange?: (settings: SettingState) => void;
 };
 
-const defaultSettings: SettingState = {
-  showOverlay: true,
-  showCategoryXp: true,
-  shareDetails: true,
-};
-
 export const SettingWidget = ({ onSettingsChange }: SettingWidgetProps) => {
-  const [values, setValues] = useState<SettingState>(() => {
-    const saved = localStorage.getItem("grow-pet-settings");
-    if (!saved) return defaultSettings;
-    try {
-      return { ...defaultSettings, ...JSON.parse(saved) };
-    } catch {
-      return defaultSettings;
-    }
-  });
+  const [values, setValues] = useState<SettingState>(loadSettings);
 
-  const handleToggle = async (key: SettingKey) => {
-    const next = { ...values, [key]: !values[key] };
+  const save = (next: SettingState) => {
     setValues(next);
     localStorage.setItem("grow-pet-settings", JSON.stringify(next));
     onSettingsChange?.(next);
+  };
 
-    // shareDetails는 친구 탭에서 DB로 읽어오므로 Supabase에도 반영
+  const handleToggle = async (key: ToggleKey) => {
+    const next = { ...values, [key]: !values[key] };
+    save(next);
+
     if (key === "shareDetails") {
       const {
         data: { user },
@@ -65,13 +84,17 @@ export const SettingWidget = ({ onSettingsChange }: SettingWidgetProps) => {
     }
   };
 
+  const handleVolume = (e: React.ChangeEvent<HTMLInputElement>) => {
+    save({ ...values, musicVolume: Number(e.target.value) });
+  };
+
   return (
     <div className={styles.settingWidget}>
       <section className={styles.settingPanel}>
         <span>설정 탭</span>
         <h2>펫과 데이터 표시 설정</h2>
         <div className={styles.settingList}>
-          {settings.map((setting) => (
+          {toggleSettings.map((setting) => (
             <label className={styles.settingRow} key={setting.key}>
               <div>
                 <strong>{setting.label}</strong>
@@ -84,6 +107,27 @@ export const SettingWidget = ({ onSettingsChange }: SettingWidgetProps) => {
               />
             </label>
           ))}
+
+          <div className={styles.volumeRow}>
+            <div>
+              <strong>배경음악 볼륨</strong>
+              <span>음악 볼륨을 조절합니다</span>
+            </div>
+            <div className={styles.volumeControl}>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={values.musicVolume}
+                onChange={handleVolume}
+                className={styles.volumeSlider}
+                disabled={!values.playMusic}
+              />
+              <span className={styles.volumeValue}>
+                {values.playMusic ? `${values.musicVolume}%` : "OFF"}
+              </span>
+            </div>
+          </div>
         </div>
       </section>
 

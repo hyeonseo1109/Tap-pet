@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as styles from "./style.css";
 import { HomeWidget } from "@widgets/home/ui";
-import { SettingWidget } from "@widgets/setting/ui";
+import { SettingWidget, SettingState, loadSettings } from "@widgets/setting/ui";
 import { StatsWidget } from "@widgets/stats/ui";
 import { FriendWidget } from "@widgets/friend/ui";
 import { LogoutButton } from "@widgets/auth/ui";
@@ -19,6 +19,7 @@ import { usePresence } from "@features/presence/hook/usePresence";
 import { useFriendTyping } from "@features/presence/hook/useFriendTyping";
 import { supabase } from "@shared/api";
 import { isTauri } from "@tauri-apps/api/core";
+import { useBackgroundMusic } from "@features/audio/hook";
 
 type Tab = "home" | "friend" | "stats" | "setting";
 
@@ -35,28 +36,6 @@ type FriendProfile = {
   main_pet?: Pet;
 };
 
-type AppSettings = {
-  showOverlay: boolean;
-  showCategoryXp: boolean;
-  shareDetails: boolean;
-};
-
-const defaultSettings: AppSettings = {
-  showOverlay: true,
-  showCategoryXp: true,
-  shareDetails: true,
-};
-
-const loadSettings = (): AppSettings => {
-  const saved = localStorage.getItem("grow-pet-settings");
-  if (!saved) return defaultSettings;
-  try {
-    return { ...defaultSettings, ...JSON.parse(saved) };
-  } catch {
-    return defaultSettings;
-  }
-};
-
 export const HomePage = () => {
   const [tab, setTab] = useState<Tab>("home");
   const [myId, setMyId] = useState<string | null>(null);
@@ -67,13 +46,18 @@ export const HomePage = () => {
   const [hiddenOverlayIds, setHiddenOverlayIds] = useState<Set<string>>(
     new Set(),
   );
-  const [appSettings, setAppSettings] = useState<AppSettings>(loadSettings);
+  const [appSettings, setAppSettings] = useState<SettingState>(loadSettings);
 
   const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingPetRef = useRef<Pet | null>(null);
   const initialLoadDoneRef = useRef(false);
   const friendIdsRef = useRef<string[]>([]);
   const appSettingsRef = useRef(appSettings);
+
+  useBackgroundMusic({
+    play: appSettings.playMusic,
+    volume: appSettings.musicVolume,
+  });
 
   useEffect(() => {
     appSettingsRef.current = appSettings;
@@ -281,7 +265,6 @@ export const HomePage = () => {
 
   // ── Tauri overlay 윈도우 동기화 ─────────────────────────────
 
-  // 내 펫 상태 전송
   const syncOverlay = useCallback(
     (stage: string, state: string, speed: number) => {
       if (!isTauri()) return;
@@ -296,7 +279,6 @@ export const HomePage = () => {
     syncOverlay(mainPetStage, petState, animationSpeedRef.current);
   }, [petState, mainPetStage, syncOverlay, animationSpeedRef]);
 
-  // 친구 목록 overlay 전송 (접속 중 친구가 바뀔 때마다)
   useEffect(() => {
     if (!isTauri()) return;
     import("@tauri-apps/api/event").then(({ emit }) => {
@@ -304,7 +286,6 @@ export const HomePage = () => {
     });
   }, [onlineFriendsForOverlay]);
 
-  // overlay에서 친구 숨김 요청 수신
   useEffect(() => {
     if (!isTauri()) return;
     let unlisten: (() => void) | null = null;
@@ -320,7 +301,6 @@ export const HomePage = () => {
     };
   }, []);
 
-  // overlay에 친구 다시 보이기 요청 전송
   const showFriendOnOverlay = useCallback((id: string) => {
     setHiddenOverlayIds((prev) => {
       const next = new Set(prev);
@@ -333,7 +313,6 @@ export const HomePage = () => {
     });
   }, []);
 
-  // overlay 표시/숨김 동기화
   useEffect(() => {
     if (!isTauri()) return;
     import("@tauri-apps/api/core").then(({ invoke }) => {
@@ -347,7 +326,6 @@ export const HomePage = () => {
 
   return (
     <div className={styles.homePage}>
-      {/* 웹 환경에서만 인앱 오버레이 표시 */}
       {mainPet && appSettings.showOverlay && !isTauri() && (
         <CharacterImage
           stage={mainPetStage}
