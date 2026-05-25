@@ -61,7 +61,7 @@ export const useGameEngine = ({
       typingTimerRef.current = setTimeout(() => {
         setState("idle");
         animationSpeedRef.current = 220;
-      }, 500);
+      }, 250);
     };
 
     let unlistenFn: (() => void) | null = null;

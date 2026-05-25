@@ -7,8 +7,11 @@ static LISTENING: AtomicBool = AtomicBool::new(true);
 static OVERLAY_VISIBLE: AtomicBool = AtomicBool::new(true);
 const OVERLAY_WIDTH: f64 = 360.0;
 const OVERLAY_HEIGHT: f64 = 220.0;
+const TOAST_OVERLAY_WIDTH: f64 = 360.0;
+const TOAST_OVERLAY_HEIGHT: f64 = 240.0;
 const OVERLAY_MARGIN: f64 = 12.0;
 const FRIEND_OVERLAY_COUNT: usize = 3;
+const TOAST_OVERLAY_LABEL: &str = "overlay-toast";
 
 // ── macOS: 현재 포커스된 앱의 bundle ID로 XP 카테고리 분류 ────────────────
 #[cfg(target_os = "macos")]
@@ -262,6 +265,12 @@ fn friend_overlay_label(index: usize) -> String {
 }
 
 fn overlay_labels() -> Vec<String> {
+    let mut labels = pet_overlay_labels();
+    labels.push(TOAST_OVERLAY_LABEL.to_string());
+    labels
+}
+
+fn pet_overlay_labels() -> Vec<String> {
     let mut labels = vec!["overlay".to_string()];
     labels.extend((0..FRIEND_OVERLAY_COUNT).map(friend_overlay_label));
     labels
@@ -277,11 +286,12 @@ fn overlay_windows(app: &tauri::AppHandle) -> Vec<tauri::WebviewWindow> {
 #[cfg(target_os = "macos")]
 fn apply_macos_overlay_style(window: &tauri::WebviewWindow) {
     use core_graphics::display::CGShieldingWindowLevel;
-    use objc::{msg_send, sel, sel_impl};
     use objc::runtime::Object;
+    use objc::{class, msg_send, sel, sel_impl};
 
+    // TRANSIENT 제거 - STATIONARY와 충돌하고 전체화면 Space 추적 방해
     const NS_WINDOW_COLLECTION_BEHAVIOR_CAN_JOIN_ALL_SPACES: usize = 1 << 0;
-    const NS_WINDOW_COLLECTION_BEHAVIOR_TRANSIENT: usize = 1 << 3;
+    // TRANSIENT(1<<3) 제거
     const NS_WINDOW_COLLECTION_BEHAVIOR_STATIONARY: usize = 1 << 4;
     const NS_WINDOW_COLLECTION_BEHAVIOR_IGNORES_CYCLE: usize = 1 << 6;
     const NS_WINDOW_COLLECTION_BEHAVIOR_FULL_SCREEN_AUXILIARY: usize = 1 << 8;
@@ -289,12 +299,13 @@ fn apply_macos_overlay_style(window: &tauri::WebviewWindow) {
     const NS_WINDOW_STYLE_MASK_NONACTIVATING_PANEL: usize = 1 << 7;
     const NS_WINDOW_ANIMATION_BEHAVIOR_NONE: i64 = 2;
 
-    let Ok(ns_window) = window.ns_window() else {
-        return;
-    };
+    let Ok(ns_window) = window.ns_window() else { return; };
     let ns_window = ns_window as *mut Object;
 
     unsafe {
+        let ns_app: *mut Object = msg_send![class!(NSApplication), sharedApplication];
+        let _: () = msg_send![ns_app, unhideWithoutActivation];
+
         let current_style_mask: usize = msg_send![ns_window, styleMask];
         let next_style_mask = current_style_mask
             | NS_WINDOW_STYLE_MASK_UTILITY_WINDOW
@@ -304,7 +315,7 @@ fn apply_macos_overlay_style(window: &tauri::WebviewWindow) {
         let current_behavior: usize = msg_send![ns_window, collectionBehavior];
         let next_behavior = current_behavior
             | NS_WINDOW_COLLECTION_BEHAVIOR_CAN_JOIN_ALL_SPACES
-            | NS_WINDOW_COLLECTION_BEHAVIOR_TRANSIENT
+            // TRANSIENT 없음
             | NS_WINDOW_COLLECTION_BEHAVIOR_STATIONARY
             | NS_WINDOW_COLLECTION_BEHAVIOR_IGNORES_CYCLE
             | NS_WINDOW_COLLECTION_BEHAVIOR_FULL_SCREEN_AUXILIARY;
@@ -322,13 +333,17 @@ fn apply_macos_overlay_style(window: &tauri::WebviewWindow) {
 fn apply_macos_overlay_style(_window: &tauri::WebviewWindow) {}
 
 fn configure_overlay_window(w: &tauri::WebviewWindow) {
+    let (width, height) = if w.label() == TOAST_OVERLAY_LABEL {
+        (TOAST_OVERLAY_WIDTH, TOAST_OVERLAY_HEIGHT)
+    } else {
+        (OVERLAY_WIDTH, OVERLAY_HEIGHT)
+    };
+
+    let _ = w.show();
     let _ = w.set_focusable(false);
     let _ = w.set_visible_on_all_workspaces(true);
     let _ = w.set_always_on_top(true);
-    let _ = w.set_size(tauri::LogicalSize {
-        width: OVERLAY_WIDTH,
-        height: OVERLAY_HEIGHT,
-    });
+    let _ = w.set_size(tauri::LogicalSize { width, height });
     apply_macos_overlay_style(w);
 }
 
@@ -340,10 +355,19 @@ fn configure_overlay_windows(app: &tauri::AppHandle) {
 
 fn reset_overlay_positions(app: &tauri::AppHandle) {
     let Some(monitor) = app.primary_monitor().ok().flatten() else {
-        for (index, w) in overlay_windows(app).into_iter().enumerate() {
+        for (index, label) in pet_overlay_labels().into_iter().enumerate() {
+            let Some(w) = app.get_webview_window(&label) else {
+                continue;
+            };
             let _ = w.set_position(tauri::LogicalPosition {
                 x: 1200.0 - OVERLAY_WIDTH - OVERLAY_MARGIN - index as f64 * 86.0,
                 y: 800.0 - OVERLAY_HEIGHT - OVERLAY_MARGIN,
+            });
+        }
+        if let Some(w) = app.get_webview_window(TOAST_OVERLAY_LABEL) {
+            let _ = w.set_position(tauri::LogicalPosition {
+                x: 1200.0 - TOAST_OVERLAY_WIDTH - OVERLAY_MARGIN,
+                y: OVERLAY_MARGIN,
             });
         }
         return;
@@ -356,11 +380,22 @@ fn reset_overlay_positions(app: &tauri::AppHandle) {
     let overlay_height = OVERLAY_HEIGHT * scale;
     let margin = OVERLAY_MARGIN * scale;
 
-    for (index, w) in overlay_windows(app).into_iter().enumerate() {
+    for (index, label) in pet_overlay_labels().into_iter().enumerate() {
+        let Some(w) = app.get_webview_window(&label) else {
+            continue;
+        };
         let _ = w.set_position(tauri::PhysicalPosition {
             x: (position.x as f64 + size.width as f64 - overlay_width - margin
                 - index as f64 * 86.0 * scale) as i32,
             y: (position.y as f64 + size.height as f64 - overlay_height - margin) as i32,
+        });
+    }
+
+    if let Some(w) = app.get_webview_window(TOAST_OVERLAY_LABEL) {
+        let _ = w.set_position(tauri::PhysicalPosition {
+            x: (position.x as f64 + size.width as f64 - TOAST_OVERLAY_WIDTH * scale - margin)
+                as i32,
+            y: (position.y as f64 + margin) as i32,
         });
     }
 }
@@ -399,6 +434,28 @@ pub fn run() {
                 .unwrap_or((0.0, 0.0, 1200.0, 800.0));
 
             for (index, label) in overlay_labels().into_iter().enumerate() {
+                let is_toast = label == TOAST_OVERLAY_LABEL;
+                let width = if is_toast {
+                    TOAST_OVERLAY_WIDTH
+                } else {
+                    OVERLAY_WIDTH
+                };
+                let height = if is_toast {
+                    TOAST_OVERLAY_HEIGHT
+                } else {
+                    OVERLAY_HEIGHT
+                };
+                let x = if is_toast {
+                    screen_x + screen_width - TOAST_OVERLAY_WIDTH - OVERLAY_MARGIN
+                } else {
+                    screen_x + screen_width - OVERLAY_WIDTH - OVERLAY_MARGIN - index as f64 * 86.0
+                };
+                let y = if is_toast {
+                    screen_y + OVERLAY_MARGIN
+                } else {
+                    screen_y + screen_height - OVERLAY_HEIGHT - OVERLAY_MARGIN
+                };
+
                 let overlay = WebviewWindowBuilder::new(
                     app,
                     label.clone(),
@@ -413,11 +470,8 @@ pub fn run() {
                 .focusable(false)
                 .focused(false)
                 .resizable(false)
-                .inner_size(OVERLAY_WIDTH, OVERLAY_HEIGHT)
-                .position(
-                    screen_x + screen_width - OVERLAY_WIDTH - OVERLAY_MARGIN - index as f64 * 86.0,
-                    screen_y + screen_height - OVERLAY_HEIGHT - OVERLAY_MARGIN,
-                )
+                .inner_size(width, height)
+                .position(x, y)
                 .build()?;
                 configure_overlay_window(&overlay);
             }

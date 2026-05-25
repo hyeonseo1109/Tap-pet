@@ -9,6 +9,9 @@ const PET_SCALE = 1.5;
 const PET_WIDTH = FRAME_WIDTH * PET_SCALE;
 const PET_HEIGHT = FRAME_HEIGHT * PET_SCALE;
 const TOTAL_FRAMES = 4;
+const TOAST_WINDOW_LABEL = "overlay-toast";
+const OVERLAY_FONT =
+  '"neodgm_code", system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
 
 const STAGE_ROW: Record<string, number> = {
   egg: 0,
@@ -46,6 +49,69 @@ type PokeToast = {
 const getFriendIndexFromLabel = (label: string) => {
   const match = label.match(/^overlay-friend-(\d+)$/);
   return match ? Number(match[1]) : null;
+};
+
+const useOverlayClickThrough = (dragging: boolean) => {
+  const draggingRef = useRef(dragging);
+
+  useEffect(() => {
+    draggingRef.current = dragging;
+  }, [dragging]);
+
+  useEffect(() => {
+    const overlayWindow = getCurrentWindow();
+    let cancelled = false;
+    let scaleFactor = 1;
+    let ignoring = false;
+
+    const setIgnoring = async (next: boolean) => {
+      if (ignoring === next) return;
+      ignoring = next;
+      await overlayWindow.setIgnoreCursorEvents(next);
+    };
+
+    void overlayWindow.scaleFactor().then((next) => {
+      scaleFactor = next || 1;
+    });
+    void setIgnoring(true);
+
+    const tick = async () => {
+      if (cancelled) return;
+      if (draggingRef.current) {
+        await setIgnoring(false);
+        return;
+      }
+
+      const [cursor, position] = await Promise.all([
+        cursorPosition(),
+        overlayWindow.outerPosition(),
+      ]);
+      const x = (cursor.x - position.x) / scaleFactor;
+      const y = (cursor.y - position.y) / scaleFactor;
+      const interactive =
+        x >= 0 &&
+        y >= 0 &&
+        x <= window.innerWidth &&
+        y <= window.innerHeight &&
+        document
+          .elementsFromPoint(x, y)
+          .some((element) =>
+            element.closest('[data-overlay-interactive="true"]'),
+          );
+
+      await setIgnoring(!interactive);
+    };
+
+    const intervalId = window.setInterval(() => {
+      void tick();
+    }, 24);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+      void overlayWindow.setIgnoreCursorEvents(false);
+    };
+  }, []);
 };
 
 const useAnimatedFrame = (speedRef: React.RefObject<number>) => {
@@ -148,6 +214,7 @@ const SpritePet = ({
 
   return (
     <div
+      data-overlay-interactive="true"
       onMouseDown={onMouseDown}
       style={{
         position: "relative",
@@ -185,16 +252,65 @@ const FriendPet = ({
   onMouseDown: (e: React.MouseEvent) => void;
 }) => {
   const speedRef = useRef(friend.isTyping ? 100 : 220);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const hoveredRef = useRef(false);
   const [hovered, setHovered] = useState(false);
 
   useEffect(() => {
     speedRef.current = friend.isTyping ? 100 : 220;
   }, [friend.isTyping]);
 
+  useEffect(() => {
+    const overlayWindow = getCurrentWindow();
+    let cancelled = false;
+    let scaleFactor = 1;
+
+    void overlayWindow.scaleFactor().then((next) => {
+      scaleFactor = next || 1;
+    });
+
+    const setNextHovered = (next: boolean) => {
+      if (hoveredRef.current === next) return;
+      hoveredRef.current = next;
+      setHovered(next);
+    };
+
+    const tick = async () => {
+      if (cancelled) return;
+      const element = wrapperRef.current;
+      if (!element) return;
+
+      const [cursor, position] = await Promise.all([
+        cursorPosition(),
+        overlayWindow.outerPosition(),
+      ]);
+      const x = (cursor.x - position.x) / scaleFactor;
+      const y = (cursor.y - position.y) / scaleFactor;
+      const rect = element.getBoundingClientRect();
+      const topPadding = hoveredRef.current ? 52 : 0;
+      const inside =
+        x >= rect.left &&
+        x <= rect.right &&
+        y >= rect.top - topPadding &&
+        y <= rect.bottom;
+
+      setNextHovered(inside);
+    };
+
+    const intervalId = window.setInterval(() => {
+      void tick();
+    }, 24);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, []);
+
   return (
     <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      ref={wrapperRef}
+      data-overlay-interactive="true"
       style={{ position: "relative", pointerEvents: "auto" }}
     >
       {hovered && (
@@ -213,6 +329,7 @@ const FriendPet = ({
           }}
         >
           <button
+            data-overlay-interactive="true"
             onClick={(e) => {
               e.stopPropagation();
               void emit("overlay-hide-friend", { id: friend.id });
@@ -224,6 +341,7 @@ const FriendPet = ({
               background: "#b95749",
               color: "#fff",
               fontSize: 9,
+              fontFamily: OVERLAY_FONT,
               fontWeight: 900,
               cursor: "pointer",
               borderRadius: 2,
@@ -238,6 +356,7 @@ const FriendPet = ({
           <span
             style={{
               fontSize: 10,
+              fontFamily: OVERLAY_FONT,
               fontWeight: 900,
               color: "#fff8df",
               background: "rgba(42,25,17,0.75)",
@@ -274,14 +393,15 @@ const PokeToastStack = ({
 
   return (
     <div
+      data-overlay-interactive="true"
       style={{
         position: "absolute",
-        left: 0,
-        right: 0,
-        bottom: "100%",
+        top: 12,
+        right: 12,
+        width: "min(318px, calc(100vw - 24px))",
         display: "grid",
         gap: 8,
-        paddingBottom: 10,
+        fontFamily: OVERLAY_FONT,
         pointerEvents: "auto",
       }}
     >
@@ -295,12 +415,15 @@ const PokeToastStack = ({
             border: "3px solid #5a3525",
             background: "#fff5cf",
             color: "#3d281f",
-            padding: "10px 34px 10px 12px",
+            padding: "13px 36px 13px 13px",
             boxShadow: "0 5px 0 rgba(67, 39, 25, 0.35)",
-            fontSize: 12,
+            fontSize: 13,
+            fontFamily: OVERLAY_FONT,
+            lineHeight: 1.45,
           }}
         >
           <button
+            data-overlay-interactive="true"
             type="button"
             onClick={(e) => {
               e.stopPropagation();
@@ -318,7 +441,8 @@ const PokeToastStack = ({
               border: "2px solid #7a332a",
               background: "#c84d43",
               color: "#fff8df",
-              fontSize: 11,
+              fontSize: 12,
+              fontFamily: OVERLAY_FONT,
               fontWeight: 900,
               lineHeight: 1,
               cursor: "pointer",
@@ -339,6 +463,7 @@ export const OverlayApp = () => {
   const windowLabel = getCurrentWindow().label;
   const friendIndex = getFriendIndexFromLabel(windowLabel);
   const isFriendWindow = friendIndex !== null;
+  const isToastWindow = windowLabel === TOAST_WINDOW_LABEL;
   const [stage, setStage] = useState("egg");
   const [state, setState] = useState("idle");
   const [friends, setFriends] = useState<OnlineFriend[]>([]);
@@ -346,6 +471,8 @@ export const OverlayApp = () => {
   const speedRef = useRef(220);
   const { dragging, startDrag } = useOverlayWindowDrag();
   const friend = friendIndex === null ? null : friends[friendIndex];
+
+  useOverlayClickThrough(dragging);
 
   useEffect(() => {
     void getCurrentWindow().setVisibleOnAllWorkspaces(true);
@@ -415,6 +542,28 @@ export const OverlayApp = () => {
     };
   }, []);
 
+  if (isToastWindow) {
+    return (
+      <div
+        style={{
+          position: "relative",
+          width: "100vw",
+          height: "100vh",
+          background: "transparent",
+          overflow: "visible",
+          pointerEvents: "none",
+        }}
+      >
+        <PokeToastStack
+          toasts={pokeToasts}
+          onDismiss={(id) =>
+            setPokeToasts((prev) => prev.filter((toast) => toast.id !== id))
+          }
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       style={{
@@ -439,12 +588,6 @@ export const OverlayApp = () => {
           pointerEvents: "none",
         }}
       >
-        <PokeToastStack
-          toasts={isFriendWindow ? [] : pokeToasts}
-          onDismiss={(id) =>
-            setPokeToasts((prev) => prev.filter((toast) => toast.id !== id))
-          }
-        />
         {friend && (
           <FriendPet
             key={friend.id}
