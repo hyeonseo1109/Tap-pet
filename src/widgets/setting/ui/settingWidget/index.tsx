@@ -2,6 +2,7 @@ import { useState } from "react";
 import { supabase } from "@shared/api";
 import { DeleteAccountSection } from "../deleteAccountSection";
 import * as styles from "./style.css";
+import { loadSettings } from "@widgets/setting/model";
 
 const toggleSettings = [
   {
@@ -34,24 +35,6 @@ export type SettingState = {
   shareDetails: boolean;
   playMusic: boolean;
   musicVolume: number;
-};
-
-export const defaultSettings: SettingState = {
-  showOverlay: true,
-  showCategoryXp: true,
-  shareDetails: true,
-  playMusic: false,
-  musicVolume: 40,
-};
-
-export const loadSettings = (): SettingState => {
-  const saved = localStorage.getItem("grow-pet-settings");
-  if (!saved) return defaultSettings;
-  try {
-    return { ...defaultSettings, ...JSON.parse(saved) };
-  } catch {
-    return defaultSettings;
-  }
 };
 
 type SettingWidgetProps = {

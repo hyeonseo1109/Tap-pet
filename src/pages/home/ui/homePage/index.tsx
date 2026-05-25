@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as styles from "./style.css";
 import { HomeWidget } from "@widgets/home/ui";
-import { SettingWidget, SettingState, loadSettings } from "@widgets/setting/ui";
+import { SettingWidget, SettingState } from "@widgets/setting/ui";
 import { StatsWidget } from "@widgets/stats/ui";
 import { FriendWidget } from "@widgets/friend/ui";
 import { LogoutButton } from "@widgets/auth/ui";
@@ -20,6 +20,7 @@ import { useFriendTyping } from "@features/presence/hook/useFriendTyping";
 import { supabase } from "@shared/api";
 import { isTauri } from "@tauri-apps/api/core";
 import { useBackgroundMusic } from "@features/audio/hook";
+import { loadSettings } from "@widgets/setting/model";
 
 type Tab = "home" | "friend" | "stats" | "setting";
 
