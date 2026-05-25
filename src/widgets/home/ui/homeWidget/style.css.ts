@@ -76,7 +76,7 @@ export const mainPetCard = style({
   display: "grid",
   gridTemplateColumns: "180px minmax(0, 1fr)",
   gap: 22,
-  alignItems: "center",
+  alignItems: "start",
   "@media": {
     "(max-width: 700px)": {
       gridTemplateColumns: "1fr",

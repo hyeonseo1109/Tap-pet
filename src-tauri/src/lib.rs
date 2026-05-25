@@ -48,23 +48,37 @@ fn get_active_app_category() -> &'static str {
 
     // 글쓰기/창작 → creativity
     if bundle_id.contains("word")
-        || bundle_id.contains("pages")
-        || bundle_id.contains("notes")
-        || bundle_id.contains("notion")
-        || bundle_id.contains("obsidian")
-        || bundle_id.contains("bear")
-        || bundle_id.contains("ulysses")
-        || bundle_id.contains("typora")
-        || bundle_id.contains("craft")
-        || bundle_id.contains("logseq")
-        || bundle_id.contains("textedit")
-        || bundle_id.contains("scrivener")
-        || bundle_id.contains("garageband")
-        || bundle_id.contains("logic")
-        || bundle_id.contains("ableton")
-    {
-        return "creativity";
-    }
+    || bundle_id.contains("microsoft word")
+    || bundle_id.contains("pages")
+    || bundle_id.contains("notes")
+    || bundle_id.contains("notion")
+    || bundle_id.contains("obsidian")
+    || bundle_id.contains("bear")
+    || bundle_id.contains("ulysses")
+    || bundle_id.contains("typora")
+    || bundle_id.contains("craft")
+    || bundle_id.contains("logseq")
+    || bundle_id.contains("textedit")
+    || bundle_id.contains("scrivener")
+    // 음악 제작
+    || bundle_id.contains("garageband")
+    || bundle_id.contains("logic")
+    || bundle_id.contains("logic pro")
+    || bundle_id.contains("ableton")
+    || bundle_id.contains("cubase")
+    || bundle_id.contains("steinberg")
+    // 한글 / 워드 프로세서
+    || bundle_id.contains("hangul")
+    || bundle_id.contains("hancom")
+    || bundle_id.contains("microsoft word")
+    || bundle_id.contains("word")
+    // 엑셀
+    || bundle_id.contains("excel")
+    || bundle_id.contains("microsoft excel")
+    || bundle_id.contains("numbers")
+{
+    return "creativity";
+}
 
     // 채팅/소통 → social
     if bundle_id.contains("kakao")

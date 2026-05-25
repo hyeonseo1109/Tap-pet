@@ -1,4 +1,4 @@
-import { style } from "@vanilla-extract/css";
+import { style, keyframes } from "@vanilla-extract/css";
 
 export const button = style({
   userSelect: "none",
@@ -29,10 +29,6 @@ export const button = style({
     "&:disabled": {
       cursor: "default",
       backgroundColor: "#ffffff61",
-    },
-
-    "&:disabled::before": {
-      opacity: "0.38",
     },
 
     "&:hover": {
@@ -82,4 +78,16 @@ export const stateOverlay = style({
       opacity: 0.12,
     },
   },
+});
+
+const blink = keyframes({
+  "0%": { opacity: 0.2 },
+  "50%": { opacity: 1 },
+  "100%": { opacity: 0.2 },
+});
+
+export const dots = style({
+  marginLeft: "6px",
+  fontWeight: 700,
+  animation: `${blink} 1s infinite`,
 });

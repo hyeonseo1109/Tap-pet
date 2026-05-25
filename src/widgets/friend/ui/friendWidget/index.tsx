@@ -22,7 +22,7 @@ type FriendWidgetProps = {
   onlineFriendIds: Set<string>;
   hiddenOverlayIds: Set<string>;
   onShowFriend: (id: string) => void;
-  onPokeFriend: (id: string) => boolean;
+  onPokeFriend: (id: string) => boolean | Promise<boolean>;
   onFriendsChange?: () => void;
 };
 
@@ -43,6 +43,7 @@ export const FriendWidget = ({
     useState<FriendProfile | null>(null);
   const [isRemovingFriend, setIsRemovingFriend] = useState(false);
   const [removeFriendError, setRemoveFriendError] = useState("");
+  const [pokeError, setPokeError] = useState("");
   const [pokeCooldownIds, setPokeCooldownIds] = useState<Set<string>>(
     new Set(),
   );
@@ -239,9 +240,13 @@ export const FriendWidget = ({
     onFriendsChange?.();
   };
 
-  const handlePokeFriend = (friendId: string) => {
-    const sent = onPokeFriend(friendId);
-    if (!sent) return;
+  const handlePokeFriend = async (friendId: string) => {
+    setPokeError("");
+    const sent = await onPokeFriend(friendId);
+    if (!sent) {
+      setPokeError("콕 찌르기를 보내지 못했어요. 잠시 후 다시 시도해 주세요.");
+      return;
+    }
 
     setPokeCooldownIds((prev) => new Set([...prev, friendId]));
     setTimeout(() => {
@@ -314,7 +319,7 @@ export const FriendWidget = ({
       <section className={styles.friendSearch}>
         <div>
           <span>친구 탭</span>
-          <h2>친구 펫 구경하기</h2>
+          <p className={styles.friendTitle}>친구 펫 구경하기</p>
         </div>
         <div className={styles.searchInputWrapper}>
           <label className={styles.searchLabel}>
@@ -351,6 +356,7 @@ export const FriendWidget = ({
           {searchSuccess && (
             <span className={styles.searchSuccess}>{searchSuccess}</span>
           )}
+          {pokeError && <span className={styles.searchError}>{pokeError}</span>}
         </div>
       </section>
 
@@ -425,7 +431,7 @@ export const FriendWidget = ({
                         className={styles.pokeButton}
                         type="button"
                         disabled={pokeCooldownIds.has(friend.id)}
-                        onClick={() => handlePokeFriend(friend.id)}
+                        onClick={() => void handlePokeFriend(friend.id)}
                         title="5초에 한 번 콕 찌르기"
                       >
                         콕 찌르기

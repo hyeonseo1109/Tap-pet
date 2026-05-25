@@ -60,8 +60,9 @@ export const useGameEngine = ({
       if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
       typingTimerRef.current = setTimeout(() => {
         setState("idle");
-        animationSpeedRef.current = 220;
-      }, 250);
+        animationSpeedRef.current = 250;
+        // 타자 끝나는 시간 인식
+      }, 200);
     };
 
     let unlistenFn: (() => void) | null = null;

@@ -396,3 +396,16 @@ export const deleteConfirmButton = style({
     },
   },
 });
+
+export const friendTitle = style({
+  fontSize: "1.5rem",
+  fontWeight: 900,
+  color: "#7a4e34",
+  textShadow: "2px 2px 0 #c4a86a",
+  margin: 0,
+  "@media": {
+    "(max-width: 900px)": {
+      fontSize: "20px",
+    },
+  },
+});

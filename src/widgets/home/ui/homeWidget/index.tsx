@@ -247,8 +247,8 @@ export const HomeWidget = ({
               </button>
             </div>
             <p className={styles.modalMessage}>
-              정말 {pendingDeletePet.name}을(를) 보내시겠습니까? 이 펫의 데이터가
-              삭제됩니다.
+              정말 {pendingDeletePet.name}을(를) 보내시겠습니까? 이 펫의
+              데이터가 삭제됩니다.
             </p>
             {deletePetError && (
               <p className={styles.modalError}>{deletePetError}</p>
@@ -276,10 +276,10 @@ export const HomeWidget = ({
       )}
 
       <section className={styles.heroPanel}>
-        <div className={styles.sectionTitle}>
+        {/* <div className={styles.sectionTitle}>
           <span>대표 펫</span>
           <strong>{mainPet?.name ?? "아직 데려온 펫이 없어요"}</strong>
-        </div>
+        </div> */}
 
         {isLoading && (
           <p className={styles.emptyText}>펫 정보를 불러오는 중...</p>

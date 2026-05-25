@@ -1,14 +1,32 @@
+import { useState } from "react";
 import * as s from "./style.css";
 
 export const GoogleButton = ({
   onClick,
   disabled,
 }: {
-  onClick?: () => void;
+  onClick?: () => Promise<void> | void;
   disabled?: boolean;
 }) => {
+  const [loading, setLoading] = useState(false);
+
+  const handleClick = async () => {
+    if (loading) return;
+
+    try {
+      setLoading(true);
+      await onClick?.();
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <button className={s.button} onClick={onClick} disabled={disabled}>
+    <button
+      className={s.button}
+      onClick={handleClick}
+      disabled={disabled || loading}
+    >
       <div className={s.stateOverlay} />
 
       <div className={s.contentWrapper}>
@@ -33,7 +51,15 @@ export const GoogleButton = ({
           </svg>
         </div>
 
-        <span className={s.text}>구글 로그인으로 계속하기</span>
+        <span className={s.text}>
+          {loading ? (
+            <>
+              로그인 중<span className={s.dots}>...</span>
+            </>
+          ) : (
+            "구글 로그인으로 계속하기"
+          )}
+        </span>
       </div>
     </button>
   );
