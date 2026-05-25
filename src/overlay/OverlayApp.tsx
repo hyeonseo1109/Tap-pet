@@ -52,6 +52,7 @@ function useAnimatedFrame(speedRef: React.RefObject<number>) {
   return frame;
 }
 
+// ── 내 펫 ────────────────────────────────────────────
 const MyPet = () => {
   const [stage, setStage] = useState("egg");
   const [state, setState] = useState("idle");
@@ -61,6 +62,7 @@ const MyPet = () => {
   const isDragging = useRef(false);
   const [dragging, setDragging] = useState(false);
 
+  // 오버레이 윈도우 자체를 이동 (기존 방식 유지)
   const onMouseDown = (e: React.MouseEvent) => {
     isDragging.current = true;
     setDragging(true);
@@ -79,7 +81,6 @@ const MyPet = () => {
       isDragging.current = false;
       setDragging(false);
     };
-
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
     return () => {
@@ -105,7 +106,6 @@ const MyPet = () => {
   useEffect(() => {
     let unlisten: (() => void) | null = null;
     let idleTimer: ReturnType<typeof setTimeout> | null = null;
-
     listen<void>("global-keypress", () => {
       setState("typing");
       speedRef.current = 90;
@@ -117,7 +117,6 @@ const MyPet = () => {
     }).then((fn) => {
       unlisten = fn;
     });
-
     return () => {
       unlisten?.();
       if (idleTimer) clearTimeout(idleTimer);
@@ -151,6 +150,7 @@ const MyPet = () => {
   );
 };
 
+// ── 친구 펫 (개별 위치 state로 드래그) ───────────────
 const FriendPet = ({
   friend,
   index,
@@ -162,9 +162,42 @@ const FriendPet = ({
   const frame = useAnimatedFrame(speedRef);
   const [hovered, setHovered] = useState(false);
 
+  // 초기 위치: 내 펫 오른쪽 기준으로 index에 따라 배치
+  const [pos, setPos] = useState({ right: 10 + (index + 1) * 72, bottom: 10 });
+  const isDragging = useRef(false);
+  const [dragging, setDragging] = useState(false);
+
   useEffect(() => {
     speedRef.current = friend.isTyping ? 100 : 220;
   }, [friend.isTyping]);
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    isDragging.current = true;
+    setDragging(true);
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  useEffect(() => {
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDragging.current) return;
+      // right는 반대방향이므로 movementX를 반전
+      setPos((prev) => ({
+        right: prev.right - e.movementX,
+        bottom: prev.bottom - e.movementY,
+      }));
+    };
+    const onMouseUp = () => {
+      isDragging.current = false;
+      setDragging(false);
+    };
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, []);
 
   const x = frame * FRAME_WIDTH;
   const y = (STAGE_ROW[friend.stage] ?? 0) * FRAME_HEIGHT;
@@ -178,27 +211,39 @@ const FriendPet = ({
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onMouseDown={onMouseDown}
       style={{
         position: "absolute",
-        bottom: 10,
-        right: 10 + (index + 1) * 72,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 4,
+        bottom: pos.bottom,
+        right: pos.right,
+        width: FRAME_WIDTH,
+        height: FRAME_HEIGHT,
+        cursor: dragging ? "grabbing" : "grab",
+        userSelect: "none",
+        WebkitUserSelect: "none",
       }}
     >
+      {/* 호버 UI: absolute로 띄워서 펫 위치에 영향 없음 */}
       {hovered && (
         <div
           style={{
+            position: "absolute",
+            bottom: "100%",
+            left: "50%",
+            transform: "translateX(-50%)",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             gap: 3,
+            paddingBottom: 4,
+            pointerEvents: "auto",
           }}
         >
           <button
-            onClick={handleHide}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleHide();
+            }}
             style={{
               width: 18,
               height: 18,
@@ -235,6 +280,7 @@ const FriendPet = ({
           </span>
         </div>
       )}
+      {/* 스프라이트 */}
       <div
         style={{
           width: FRAME_WIDTH,
@@ -251,6 +297,7 @@ const FriendPet = ({
   );
 };
 
+// ── 오버레이 루트 ─────────────────────────────────────
 export const OverlayApp = () => {
   const [friends, setFriends] = useState<OnlineFriend[]>([]);
 
@@ -293,7 +340,6 @@ export const OverlayApp = () => {
           <FriendPet key={f.id} friend={f} index={i} />
         ))}
       </div>
-
       <div style={{ pointerEvents: "auto" }}>
         <MyPet />
       </div>
