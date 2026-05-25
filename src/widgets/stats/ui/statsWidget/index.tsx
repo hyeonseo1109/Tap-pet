@@ -11,9 +11,22 @@ import * as styles from "./style.css";
 
 type StatsWidgetProps = {
   pets: Pet[];
+  totalUsageSeconds: number;
 };
 
-export const StatsWidget = ({ pets }: StatsWidgetProps) => {
+const formatUsageTime = (seconds: number) => {
+  if (seconds < 60) return "1분 미만";
+
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+
+  if (days > 0) return `${days}일 ${hours}시간`;
+  if (hours > 0) return `${hours}시간 ${minutes}분`;
+  return `${minutes}분`;
+};
+
+export const StatsWidget = ({ pets, totalUsageSeconds }: StatsWidgetProps) => {
   const totalTypingCount = pets.reduce(
     (total, pet) => total + getPetTypingCount(pet),
     0,
@@ -22,7 +35,7 @@ export const StatsWidget = ({ pets }: StatsWidgetProps) => {
     .length;
   const stats = [
     ["총 타수", totalTypingCount.toLocaleString("ko-KR")],
-    ["총 이용시간", "0시간"],
+    ["총 이용시간", formatUsageTime(totalUsageSeconds)],
     ["어른까지 키워낸 펫", `${adultPetCount}마리`],
   ];
   const xpStats = Object.entries(xpCategoryLabels).map(([key, label]) => [

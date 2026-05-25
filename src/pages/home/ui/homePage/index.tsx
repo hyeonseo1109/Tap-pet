@@ -55,12 +55,15 @@ export const HomePage = () => {
   );
   const [appSettings, setAppSettings] = useState<SettingState>(loadSettings);
   const [pokeToasts, setPokeToasts] = useState<PokeToast[]>([]);
+  const [totalUsageSeconds, setTotalUsageSeconds] = useState(0);
 
   const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingPetRef = useRef<Pet | null>(null);
   const initialLoadDoneRef = useRef(false);
   const friendIdsRef = useRef<string[]>([]);
   const appSettingsRef = useRef(appSettings);
+  const pendingUsageSecondsRef = useRef(0);
+  const isFlushingUsageRef = useRef(false);
 
   useBackgroundMusic({
     play: appSettings.playMusic,
@@ -166,10 +169,25 @@ export const HomePage = () => {
 
     const { data: profile } = await supabase
       .from("users_profile")
-      .select("nickname")
+      .select("nickname, total_usage_seconds")
       .eq("id", user.id)
       .single();
-    if (profile?.nickname) setMyNickname(profile.nickname);
+    if (profile?.nickname) {
+      setMyNickname(profile.nickname);
+      setTotalUsageSeconds(
+        Number(
+          (profile as { total_usage_seconds?: number | string | null })
+            .total_usage_seconds ?? 0,
+        ),
+      );
+    } else {
+      const { data: fallbackProfile } = await supabase
+        .from("users_profile")
+        .select("nickname")
+        .eq("id", user.id)
+        .single();
+      if (fallbackProfile?.nickname) setMyNickname(fallbackProfile.nickname);
+    }
 
     const { data, error } = await supabase
       .from("pets")
@@ -261,6 +279,54 @@ export const HomePage = () => {
       if (pendingPetRef.current) void persistPetStats(pendingPetRef.current);
     };
   }, [persistPetStats]);
+
+  const flushUsageSeconds = useCallback(async () => {
+    if (!myId || isFlushingUsageRef.current) return;
+
+    const deltaSeconds = pendingUsageSecondsRef.current;
+    if (deltaSeconds <= 0) return;
+
+    pendingUsageSecondsRef.current = 0;
+    isFlushingUsageRef.current = true;
+
+    const { data, error } = await supabase.rpc("increment_user_usage_seconds", {
+      delta_seconds: deltaSeconds,
+    });
+
+    isFlushingUsageRef.current = false;
+
+    if (error) {
+      pendingUsageSecondsRef.current += deltaSeconds;
+      console.error("[grow-pet] usage persist error", error);
+      return;
+    }
+
+    if (typeof data === "number" || typeof data === "string") {
+      setTotalUsageSeconds(Number(data) + pendingUsageSecondsRef.current);
+    }
+  }, [myId]);
+
+  useEffect(() => {
+    if (!myId) return;
+
+    let lastTickAt = Date.now();
+    const intervalId = window.setInterval(() => {
+      const now = Date.now();
+      const deltaSeconds = Math.floor((now - lastTickAt) / 1000);
+      if (deltaSeconds <= 0) return;
+
+      lastTickAt += deltaSeconds * 1000;
+      pendingUsageSecondsRef.current += deltaSeconds;
+      setTotalUsageSeconds((prev) => prev + deltaSeconds);
+
+      if (pendingUsageSecondsRef.current >= 60) void flushUsageSeconds();
+    }, 1000);
+
+    return () => {
+      window.clearInterval(intervalId);
+      void flushUsageSeconds();
+    };
+  }, [flushUsageSeconds, myId]);
 
   const handleTyping = useCallback(
     (category: XpCategory) => {
@@ -483,7 +549,9 @@ export const HomePage = () => {
               onFriendsChange={reloadFriendProfiles}
             />
           )}
-          {tab === "stats" && <StatsWidget pets={pets} />}
+          {tab === "stats" && (
+            <StatsWidget pets={pets} totalUsageSeconds={totalUsageSeconds} />
+          )}
           {tab === "setting" && (
             <SettingWidget onSettingsChange={(next) => setAppSettings(next)} />
           )}
