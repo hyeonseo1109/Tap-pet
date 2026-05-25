@@ -299,7 +299,7 @@ export const HomePage = () => {
     [mainPet, schedulePersist, broadcastTyping],
   );
 
-  const { state: petState, animationSpeedRef } = useGameEngine({
+  const { state: petState, animationSpeedRef, typingTick } = useGameEngine({
     enabled: Boolean(mainPet),
     onTyping: handleTyping,
   });
@@ -312,6 +312,7 @@ export const HomePage = () => {
     onlineFriendsForOverlay,
     petState,
     setHiddenOverlayIds,
+    typingTick,
   });
 
   return (

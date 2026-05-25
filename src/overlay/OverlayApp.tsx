@@ -494,26 +494,6 @@ export const OverlayApp = () => {
 
   useEffect(() => {
     let unlisten: (() => void) | null = null;
-    let idleTimer: ReturnType<typeof setTimeout> | null = null;
-    listen<void>("global-keypress", () => {
-      setState("typing");
-      speedRef.current = 90;
-      if (idleTimer) clearTimeout(idleTimer);
-      idleTimer = setTimeout(() => {
-        setState("idle");
-        speedRef.current = 220;
-      }, 600);
-    }).then((fn) => {
-      unlisten = fn;
-    });
-    return () => {
-      unlisten?.();
-      if (idleTimer) clearTimeout(idleTimer);
-    };
-  }, []);
-
-  useEffect(() => {
-    let unlisten: (() => void) | null = null;
     listen<FriendsPayload>("overlay-friends", ({ payload }) => {
       setFriends(payload.friends.slice(0, 3));
     }).then((fn) => {

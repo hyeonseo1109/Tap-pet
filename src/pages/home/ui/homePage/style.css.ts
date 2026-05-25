@@ -181,7 +181,7 @@ export const contentWrapper = style({
   minWidth: 0,
   height: "100%",
   overflow: "auto",
-  background: "rgba(255, 244, 207, 0.92)",
+  background: "#fff4cf",
 });
 
 export const homePage = style({

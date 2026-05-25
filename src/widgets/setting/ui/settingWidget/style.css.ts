@@ -3,14 +3,14 @@ import { globalStyle, style } from "@vanilla-extract/css";
 export const settingWidget = style({
   width: "100%",
   minHeight: "100%",
-  padding: 22,
+  padding: "22px 22px 36px",
   color: "#3d281f",
   display: "grid",
   alignContent: "start",
   gap: 18,
   "@media": {
     "(max-width: 520px)": {
-      padding: 12,
+      padding: "12px 12px 28px",
     },
   },
 });

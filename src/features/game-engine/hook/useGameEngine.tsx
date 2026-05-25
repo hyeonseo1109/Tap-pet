@@ -29,6 +29,7 @@ export const useGameEngine = ({
   const lastKeyTimeRef = useRef(0);
   const animationSpeedRef = useRef(220);
   const [state, setState] = useState<"idle" | "typing">("idle");
+  const [typingTick, setTypingTick] = useState(0);
   const onTypingRef = useRef(onTyping);
 
   useEffect(() => {
@@ -37,30 +38,30 @@ export const useGameEngine = ({
 
   useEffect(() => {
     if (!enabled) return;
-    console.log("[grow-pet] useGameEngine effect 실행!");
     const handleKey = (category?: XpCategory) => {
-      console.log("[grow-pet] handleKey 호출됨!");
       const now = performance.now();
       const diff = now - lastKeyTimeRef.current;
       lastKeyTimeRef.current = now;
 
-      if (diff < 100) {
-        animationSpeedRef.current = 80;
-      } else if (diff < 300) {
+      if (diff < 90) {
+        animationSpeedRef.current = 55;
+      } else if (diff < 220) {
+        animationSpeedRef.current = 85;
+      } else if (diff < 520) {
         animationSpeedRef.current = 140;
-      } else if (diff < 700) {
-        animationSpeedRef.current = 220;
       } else {
-        animationSpeedRef.current = 400;
+        animationSpeedRef.current = 210;
       }
 
       onTypingRef.current?.(category ?? inferXpCategory());
       setState("typing");
+      setTypingTick((tick) => tick + 1);
 
       if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
       typingTimerRef.current = setTimeout(() => {
         setState("idle");
-        animationSpeedRef.current = 250;
+        animationSpeedRef.current = 240;
+        setTypingTick((tick) => tick + 1);
         // 타자 끝나는 시간 인식
       }, 200);
     };
@@ -110,5 +111,6 @@ export const useGameEngine = ({
   return {
     state,
     animationSpeedRef,
+    typingTick,
   };
 };

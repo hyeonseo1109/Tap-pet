@@ -17,6 +17,7 @@ type UseOverlaySyncParams = {
   onlineFriendsForOverlay: OverlayFriend[];
   petState: string;
   setHiddenOverlayIds: Dispatch<SetStateAction<Set<string>>>;
+  typingTick: number;
 };
 
 export const useOverlaySync = ({
@@ -26,6 +27,7 @@ export const useOverlaySync = ({
   onlineFriendsForOverlay,
   petState,
   setHiddenOverlayIds,
+  typingTick,
 }: UseOverlaySyncParams) => {
   const emitOverlayReset = useCallback(() => {
     if (!isTauri()) return;
@@ -50,7 +52,7 @@ export const useOverlaySync = ({
 
   useEffect(() => {
     syncOverlay(mainPetStage, petState, animationSpeedRef.current);
-  }, [petState, mainPetStage, syncOverlay, animationSpeedRef]);
+  }, [petState, mainPetStage, syncOverlay, animationSpeedRef, typingTick]);
 
   useEffect(() => {
     emitOverlayReset();
