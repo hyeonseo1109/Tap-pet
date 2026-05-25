@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { listen, emit } from "@tauri-apps/api/event";
+import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 
-// ── 스프라이트 상수 ──────────────────────────────────
 const FRAME_WIDTH = 52;
 const FRAME_HEIGHT = 64;
 const TOTAL_FRAMES = 4;
@@ -14,7 +13,6 @@ const STAGE_ROW: Record<string, number> = {
   adult: 3,
 };
 
-// ── 타입 ─────────────────────────────────────────────
 type OnlineFriend = {
   id: string;
   nickname: string;
@@ -32,7 +30,6 @@ type FriendsPayload = {
   friends: OnlineFriend[];
 };
 
-// ── 애니메이션 훅 ─────────────────────────────────────
 function useAnimatedFrame(speedRef: React.RefObject<number>) {
   const [frame, setFrame] = useState(0);
   const frameRef = useRef(0);
@@ -55,31 +52,42 @@ function useAnimatedFrame(speedRef: React.RefObject<number>) {
   return frame;
 }
 
-// ── 내 펫 컴포넌트 ────────────────────────────────────
 const MyPet = () => {
   const [stage, setStage] = useState("egg");
   const [state, setState] = useState("idle");
   const speedRef = useRef(220);
   const frame = useAnimatedFrame(speedRef);
 
-  // 드래그 이동
-  const dragRef = useRef<{ sx: number; sy: number } | null>(null);
+  const isDragging = useRef(false);
+  const [dragging, setDragging] = useState(false);
 
   const onMouseDown = (e: React.MouseEvent) => {
-    dragRef.current = { sx: e.screenX, sy: e.screenY };
-  };
-  const onMouseMove = (e: React.MouseEvent) => {
-    if (!dragRef.current) return;
-    const dx = e.screenX - dragRef.current.sx;
-    const dy = e.screenY - dragRef.current.sy;
-    dragRef.current = { sx: e.screenX, sy: e.screenY };
-    void invoke("move_overlay_by", { dx, dy });
-  };
-  const onMouseUp = () => {
-    dragRef.current = null;
+    isDragging.current = true;
+    setDragging(true);
+    e.preventDefault();
   };
 
-  // 메인 윈도우에서 pet-state 이벤트 수신
+  useEffect(() => {
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDragging.current) return;
+      void invoke("move_overlay_by", {
+        dx: Math.round(e.movementX),
+        dy: Math.round(e.movementY),
+      });
+    };
+    const onMouseUp = () => {
+      isDragging.current = false;
+      setDragging(false);
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, []);
+
   useEffect(() => {
     let unlisten: (() => void) | null = null;
     listen<PetStatePayload>("pet-state", ({ payload }) => {
@@ -94,7 +102,6 @@ const MyPet = () => {
     };
   }, []);
 
-  // 백그라운드 키 감지 (앱이 닫혀 있을 때도 동작)
   useEffect(() => {
     let unlisten: (() => void) | null = null;
     let idleTimer: ReturnType<typeof setTimeout> | null = null;
@@ -124,13 +131,11 @@ const MyPet = () => {
   return (
     <div
       onMouseDown={onMouseDown}
-      onMouseMove={onMouseMove}
-      onMouseUp={onMouseUp}
       style={{
         position: "absolute",
         right: 10,
         bottom: 10,
-        cursor: "grab",
+        cursor: dragging ? "grabbing" : "grab",
         width: FRAME_WIDTH,
         height: FRAME_HEIGHT,
         backgroundImage: `url('${sprite}')`,
@@ -146,7 +151,6 @@ const MyPet = () => {
   );
 };
 
-// ── 친구 펫 컴포넌트 ──────────────────────────────────
 const FriendPet = ({
   friend,
   index,
@@ -156,6 +160,7 @@ const FriendPet = ({
 }) => {
   const speedRef = useRef(220);
   const frame = useAnimatedFrame(speedRef);
+  const [hovered, setHovered] = useState(false);
 
   useEffect(() => {
     speedRef.current = friend.isTyping ? 100 : 220;
@@ -165,12 +170,10 @@ const FriendPet = ({
   const y = (STAGE_ROW[friend.stage] ?? 0) * FRAME_HEIGHT;
   const sprite = friend.isTyping ? "/typing.png" : "/idle.png";
 
-  const handleHide = () => {
-    void emit("overlay-hide-friend", { id: friend.id });
-  };
-
   return (
     <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
         position: "absolute",
         bottom: 10,
@@ -178,11 +181,26 @@ const FriendPet = ({
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        gap: 3,
+        gap: 4,
       }}
     >
-      {/* 닉네임 + 닫기 (hover시 표시) — CSS hover는 shadow DOM에서 안 되므로 state로 */}
-      <HoverLabel nickname={friend.nickname} onHide={handleHide} />
+      {hovered && (
+        <span
+          style={{
+            fontSize: 10,
+            fontWeight: 900,
+            color: "#fff8df",
+            background: "rgba(42,25,17,0.75)",
+            padding: "2px 6px",
+            whiteSpace: "nowrap",
+            maxWidth: 80,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {friend.nickname}
+        </span>
+      )}
       <div
         style={{
           width: FRAME_WIDTH,
@@ -199,75 +217,9 @@ const FriendPet = ({
   );
 };
 
-const HoverLabel = ({
-  nickname,
-  onHide,
-}: {
-  nickname: string;
-  onHide: () => void;
-}) => {
-  const [hovered, setHovered] = useState(false);
-
-  return (
-    <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 3,
-      }}
-    >
-      {hovered && (
-        <button
-          onClick={onHide}
-          style={{
-            width: 18,
-            height: 18,
-            border: "1.5px solid #4b2b1d",
-            background: "#b95749",
-            color: "#fff",
-            fontSize: 9,
-            fontWeight: 900,
-            cursor: "pointer",
-            borderRadius: 2,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            lineHeight: 1,
-            padding: 0,
-          }}
-        >
-          ✕
-        </button>
-      )}
-      <span
-        style={{
-          fontSize: 10,
-          fontWeight: 900,
-          color: "#fff8df",
-          background: "rgba(42,25,17,0.75)",
-          padding: "2px 6px",
-          whiteSpace: "nowrap",
-          maxWidth: 80,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          opacity: hovered ? 1 : 0.6,
-          transition: "opacity 150ms",
-        }}
-      >
-        {nickname}
-      </span>
-    </div>
-  );
-};
-
-// ── 오버레이 루트 ─────────────────────────────────────
 export const OverlayApp = () => {
   const [friends, setFriends] = useState<OnlineFriend[]>([]);
 
-  // 친구 목록 수신
   useEffect(() => {
     let unlisten: (() => void) | null = null;
     listen<FriendsPayload>("overlay-friends", ({ payload }) => {
@@ -280,13 +232,9 @@ export const OverlayApp = () => {
     };
   }, []);
 
-  // overlay-show-friend 수신 (메인에서 친구 다시 보이기 눌렀을 때)
   useEffect(() => {
     let unlisten: (() => void) | null = null;
     listen<{ id: string }>("overlay-show-friend", ({ payload }) => {
-      // 메인 윈도우에서 이미 hiddenOverlayIds를 삭제하므로
-      // 다음 overlay-friends 이벤트로 자동 반영됨
-      // 여기서는 아무것도 안 해도 됨
       void payload;
     }).then((fn) => {
       unlisten = fn;
@@ -306,14 +254,12 @@ export const OverlayApp = () => {
         pointerEvents: "none",
       }}
     >
-      {/* 친구 펫들 */}
       <div style={{ pointerEvents: "auto" }}>
         {friends.map((f, i) => (
           <FriendPet key={f.id} friend={f} index={i} />
         ))}
       </div>
 
-      {/* 내 펫 */}
       <div style={{ pointerEvents: "auto" }}>
         <MyPet />
       </div>
