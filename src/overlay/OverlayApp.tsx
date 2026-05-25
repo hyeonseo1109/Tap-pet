@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { listen } from "@tauri-apps/api/event";
+import { listen, emit } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 
 const FRAME_WIDTH = 52;
@@ -170,6 +170,10 @@ const FriendPet = ({
   const y = (STAGE_ROW[friend.stage] ?? 0) * FRAME_HEIGHT;
   const sprite = friend.isTyping ? "/typing.png" : "/idle.png";
 
+  const handleHide = () => {
+    void emit("overlay-hide-friend", { id: friend.id });
+  };
+
   return (
     <div
       onMouseEnter={() => setHovered(true)}
@@ -185,21 +189,51 @@ const FriendPet = ({
       }}
     >
       {hovered && (
-        <span
+        <div
           style={{
-            fontSize: 10,
-            fontWeight: 900,
-            color: "#fff8df",
-            background: "rgba(42,25,17,0.75)",
-            padding: "2px 6px",
-            whiteSpace: "nowrap",
-            maxWidth: 80,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 3,
           }}
         >
-          {friend.nickname}
-        </span>
+          <button
+            onClick={handleHide}
+            style={{
+              width: 18,
+              height: 18,
+              border: "1.5px solid #4b2b1d",
+              background: "#b95749",
+              color: "#fff",
+              fontSize: 9,
+              fontWeight: 900,
+              cursor: "pointer",
+              borderRadius: 2,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              lineHeight: 1,
+              padding: 0,
+            }}
+          >
+            ✕
+          </button>
+          <span
+            style={{
+              fontSize: 10,
+              fontWeight: 900,
+              color: "#fff8df",
+              background: "rgba(42,25,17,0.75)",
+              padding: "2px 6px",
+              whiteSpace: "nowrap",
+              maxWidth: 80,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {friend.nickname}
+          </span>
+        </div>
       )}
       <div
         style={{
