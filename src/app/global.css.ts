@@ -1,5 +1,12 @@
 // src/shared/styles/global.css.ts
-import { globalStyle } from "@vanilla-extract/css";
+import { globalFontFace, globalStyle } from "@vanilla-extract/css";
+
+globalFontFace("neodgm_code", {
+  src: "url('/fonts/neodgm_code.woff2') format('woff2'), url('/fonts/neodgm_code.ttf') format('truetype')",
+  fontWeight: 400,
+  fontStyle: "normal",
+  fontDisplay: "swap",
+});
 
 /* =========================
   1. RESET (브라우저 초기화)
@@ -17,7 +24,7 @@ globalStyle("html, #root, body", {
 });
 
 globalStyle("body", {
-  fontFamily: `system-ui, -apple-system, Segoe UI, Roboto, sans-serif`,
+  fontFamily: `"neodgm_code", system-ui, -apple-system, Segoe UI, Roboto, sans-serif`,
   WebkitFontSmoothing: "antialiased",
   MozOsxFontSmoothing: "grayscale",
   backgroundColor: "#white",

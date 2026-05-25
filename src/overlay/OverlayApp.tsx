@@ -102,6 +102,7 @@ const useOverlayCursorPassthrough = (
     const overlayWindow = getCurrentWindow();
     let cancelled = false;
     let scaleFactor = 1;
+    let windowPosition = { x: 0, y: 0 };
     let ignoringCursorEvents = false;
 
     const setIgnoring = async (next: boolean) => {
@@ -112,6 +113,9 @@ const useOverlayCursorPassthrough = (
 
     void overlayWindow.scaleFactor().then((nextScaleFactor) => {
       scaleFactor = nextScaleFactor || 1;
+    });
+    void overlayWindow.outerPosition().then((nextPosition) => {
+      windowPosition = nextPosition;
     });
     void overlayWindow.setIgnoreCursorEvents(true);
     ignoringCursorEvents = true;
@@ -124,9 +128,13 @@ const useOverlayCursorPassthrough = (
         return;
       }
 
-      const cursor = await cursorPosition();
-      const x = cursor.x / scaleFactor;
-      const y = cursor.y / scaleFactor;
+      const [cursor, nextWindowPosition] = await Promise.all([
+        cursorPosition(),
+        overlayWindow.outerPosition(),
+      ]);
+      windowPosition = nextWindowPosition;
+      const x = (cursor.x - windowPosition.x) / scaleFactor;
+      const y = (cursor.y - windowPosition.y) / scaleFactor;
       const hoveringPet = [...boundsRef.current.values()].some((petBounds) =>
         isInsideBounds(x, y, petBounds),
       );

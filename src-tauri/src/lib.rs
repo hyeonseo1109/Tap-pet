@@ -232,6 +232,36 @@ fn check_accessibility() -> bool {
     }
 }
 
+fn overlay_bounds(app: &tauri::App) -> (f64, f64, f64, f64) {
+    let monitors = app.available_monitors().unwrap_or_default();
+
+    if monitors.is_empty() {
+        return (0.0, 0.0, 1200.0, 800.0);
+    }
+
+    let mut min_x = f64::INFINITY;
+    let mut min_y = f64::INFINITY;
+    let mut max_x = f64::NEG_INFINITY;
+    let mut max_y = f64::NEG_INFINITY;
+
+    for monitor in monitors {
+        let position = monitor.position();
+        let size = monitor.size();
+        let scale = monitor.scale_factor();
+        let x = position.x as f64 / scale;
+        let y = position.y as f64 / scale;
+        let width = size.width as f64 / scale;
+        let height = size.height as f64 / scale;
+
+        min_x = min_x.min(x);
+        min_y = min_y.min(y);
+        max_x = max_x.max(x + width);
+        max_y = max_y.max(y + height);
+    }
+
+    (min_x, min_y, max_x - min_x, max_y - min_y)
+}
+
 // ── 앱 진입점 ──────────────────────────────────────────────────────────────
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -241,20 +271,7 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
             // ── 오버레이 윈도우 생성 ───────────────────────────
-            let screen = app
-                .primary_monitor()
-                .ok()
-                .flatten()
-                .map(|m| {
-                    let size = m.size().clone();
-                    let scale = m.scale_factor();
-                    (
-                        size.width as f64 / scale,
-                        size.height as f64 / scale,
-                    )
-                });
-
-            let (overlay_width, overlay_height) = screen.unwrap_or((1200.0, 800.0));
+            let (overlay_x, overlay_y, overlay_width, overlay_height) = overlay_bounds(app);
 
             let _overlay = WebviewWindowBuilder::new(
                 app,
@@ -268,7 +285,7 @@ pub fn run() {
             .skip_taskbar(true)
             .resizable(false)
             .inner_size(overlay_width, overlay_height)
-            .position(0.0, 0.0)
+            .position(overlay_x, overlay_y)
             .build()?;
 
             // ── 딥링크 → 메인 윈도우 포워딩 ──────────────────
