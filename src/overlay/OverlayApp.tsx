@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { listen, emit } from "@tauri-apps/api/event";
-import { invoke } from "@tauri-apps/api/core";
 
 const FRAME_WIDTH = 52;
 const FRAME_HEIGHT = 64;
@@ -52,30 +51,35 @@ function useAnimatedFrame(speedRef: React.RefObject<number>) {
   return frame;
 }
 
-// ── 내 펫 ────────────────────────────────────────────
+// ── 내 펫 (윈도우 내부에서 독립적으로 드래그) ──────────────────
 const MyPet = () => {
   const [stage, setStage] = useState("egg");
   const [state, setState] = useState("idle");
   const speedRef = useRef(220);
   const frame = useAnimatedFrame(speedRef);
 
+  // 초기 위치: 우측 하단
+  const [pos, setPos] = useState({
+    x: window.innerWidth - 90,
+    y: window.innerHeight - 110,
+  });
   const isDragging = useRef(false);
   const [dragging, setDragging] = useState(false);
 
-  // 오버레이 윈도우 자체를 이동 (기존 방식 유지)
   const onMouseDown = (e: React.MouseEvent) => {
     isDragging.current = true;
     setDragging(true);
     e.preventDefault();
+    e.stopPropagation();
   };
 
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
       if (!isDragging.current) return;
-      void invoke("move_overlay_by", {
-        dx: Math.round(e.movementX),
-        dy: Math.round(e.movementY),
-      });
+      setPos((prev) => ({
+        x: prev.x + e.movementX,
+        y: prev.y + e.movementY,
+      }));
     };
     const onMouseUp = () => {
       isDragging.current = false;
@@ -132,8 +136,8 @@ const MyPet = () => {
       onMouseDown={onMouseDown}
       style={{
         position: "absolute",
-        right: 10,
-        bottom: 10,
+        left: pos.x,
+        top: pos.y,
         cursor: dragging ? "grabbing" : "grab",
         width: FRAME_WIDTH,
         height: FRAME_HEIGHT,
@@ -142,15 +146,16 @@ const MyPet = () => {
         backgroundRepeat: "no-repeat",
         imageRendering: "pixelated",
         transform: "scale(1.5)",
-        transformOrigin: "bottom right",
+        transformOrigin: "top left",
         userSelect: "none",
         WebkitUserSelect: "none",
+        zIndex: 10,
       }}
     />
   );
 };
 
-// ── 친구 펫 (개별 위치 state로 드래그) ───────────────
+// ── 친구 펫 (독립적 위치 state로 드래그) ───────────────
 const FriendPet = ({
   friend,
   index,
@@ -162,8 +167,11 @@ const FriendPet = ({
   const frame = useAnimatedFrame(speedRef);
   const [hovered, setHovered] = useState(false);
 
-  // 초기 위치: 내 펫 오른쪽 기준으로 index에 따라 배치
-  const [pos, setPos] = useState({ right: 10 + (index + 1) * 72, bottom: 10 });
+  // 초기 위치: 내 펫 기준 왼쪽으로 index에 따라 배치
+  const [pos, setPos] = useState({
+    x: window.innerWidth - 90 - (index + 1) * 80,
+    y: window.innerHeight - 110,
+  });
   const isDragging = useRef(false);
   const [dragging, setDragging] = useState(false);
 
@@ -181,10 +189,9 @@ const FriendPet = ({
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
       if (!isDragging.current) return;
-      // right는 반대방향이므로 movementX를 반전
       setPos((prev) => ({
-        right: prev.right - e.movementX,
-        bottom: prev.bottom - e.movementY,
+        x: prev.x + e.movementX,
+        y: prev.y + e.movementY,
       }));
     };
     const onMouseUp = () => {
@@ -214,16 +221,17 @@ const FriendPet = ({
       onMouseDown={onMouseDown}
       style={{
         position: "absolute",
-        bottom: pos.bottom,
-        right: pos.right,
+        left: pos.x,
+        top: pos.y,
         width: FRAME_WIDTH,
         height: FRAME_HEIGHT,
         cursor: dragging ? "grabbing" : "grab",
         userSelect: "none",
         WebkitUserSelect: "none",
+        zIndex: 10,
       }}
     >
-      {/* 호버 UI: absolute로 띄워서 펫 위치에 영향 없음 */}
+      {/* 호버 UI */}
       {hovered && (
         <div
           style={{
@@ -290,7 +298,7 @@ const FriendPet = ({
           backgroundRepeat: "no-repeat",
           imageRendering: "pixelated",
           transform: "scale(1.5)",
-          transformOrigin: "bottom center",
+          transformOrigin: "top left",
         }}
       />
     </div>
@@ -335,12 +343,17 @@ export const OverlayApp = () => {
         pointerEvents: "none",
       }}
     >
-      <div style={{ pointerEvents: "auto" }}>
+      <div
+        style={{
+          pointerEvents: "auto",
+          position: "relative",
+          width: "100%",
+          height: "100%",
+        }}
+      >
         {friends.map((f, i) => (
           <FriendPet key={f.id} friend={f} index={i} />
         ))}
-      </div>
-      <div style={{ pointerEvents: "auto" }}>
         <MyPet />
       </div>
     </div>
