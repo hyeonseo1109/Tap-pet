@@ -27,6 +27,13 @@ export const useOverlaySync = ({
   petState,
   setHiddenOverlayIds,
 }: UseOverlaySyncParams) => {
+  const emitOverlayReset = useCallback(() => {
+    if (!isTauri()) return;
+    import("@tauri-apps/api/event").then(({ emit }) => {
+      void emit("overlay-reset-positions");
+    });
+  }, []);
+
   const syncOverlay = useCallback(
     (stage: string, state: string, speed: number) => {
       if (!isTauri()) return;
@@ -37,9 +44,21 @@ export const useOverlaySync = ({
     [],
   );
 
+  const overlayFriendIdsKey = onlineFriendsForOverlay
+    .map((friend) => friend.id)
+    .join("|");
+
   useEffect(() => {
     syncOverlay(mainPetStage, petState, animationSpeedRef.current);
   }, [petState, mainPetStage, syncOverlay, animationSpeedRef]);
+
+  useEffect(() => {
+    emitOverlayReset();
+  }, [emitOverlayReset, mainPetStage]);
+
+  useEffect(() => {
+    emitOverlayReset();
+  }, [emitOverlayReset, overlayFriendIdsKey]);
 
   useEffect(() => {
     if (!isTauri()) return;
@@ -73,6 +92,7 @@ export const useOverlaySync = ({
       if (!isTauri()) return;
       import("@tauri-apps/api/event").then(({ emit }) => {
         void emit("overlay-show-friend", { id });
+        void emit("overlay-reset-positions");
       });
     },
     [setHiddenOverlayIds],
@@ -85,7 +105,10 @@ export const useOverlaySync = ({
         visible: appSettings.showOverlay,
       });
     });
-  }, [appSettings.showOverlay]);
+    if (appSettings.showOverlay) {
+      emitOverlayReset();
+    }
+  }, [appSettings.showOverlay, emitOverlayReset]);
 
   return { showFriendOnOverlay };
 };
