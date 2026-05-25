@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { listen, emit } from "@tauri-apps/api/event";
+import { invoke } from "@tauri-apps/api/core";
 
 const FRAME_WIDTH = 52;
 const FRAME_HEIGHT = 64;
@@ -69,6 +70,7 @@ const MyPet = () => {
   const onMouseDown = (e: React.MouseEvent) => {
     isDragging.current = true;
     setDragging(true);
+    invoke("set_overlay_ignore_cursor", { ignore: false });
     e.preventDefault();
     e.stopPropagation();
   };
@@ -84,6 +86,7 @@ const MyPet = () => {
     const onMouseUp = () => {
       isDragging.current = false;
       setDragging(false);
+      invoke("set_overlay_ignore_cursor", { ignore: true });
     };
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
