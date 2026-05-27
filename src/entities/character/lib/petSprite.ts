@@ -19,7 +19,7 @@ export const getSpritePrefix = (species?: string | null): string => {
 };
 
 export const getIdleSprite = (species?: string | null): string =>
-  `/${getSpritePrefix(species)}-idle.png`;
+  `/pet-image/${getSpritePrefix(species)}-idle.png`;
 
 export const getTypingSprite = (species?: string | null): string =>
-  `/${getSpritePrefix(species)}-typing.png`;
+  `/pet-image/${getSpritePrefix(species)}-typing.png`;
