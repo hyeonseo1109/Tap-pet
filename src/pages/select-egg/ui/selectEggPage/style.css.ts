@@ -46,7 +46,7 @@ export const notice = style({
 
 export const eggGrid = style({
   display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
   gap: 14,
   marginTop: 28,
   "@media": {
@@ -91,7 +91,12 @@ export const eggIcon = style({
   backgroundPosition: "0 0",
   imageRendering: "pixelated",
   transform: "scale(1.7)",
-  marginBottom: 18,
+  marginBottom: 20,
+});
+
+export const description = style({
+  fontSize: "14.5px",
+  wordBreak: "keep-all",
 });
 
 export const nameField = style({

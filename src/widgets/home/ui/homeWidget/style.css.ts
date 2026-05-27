@@ -313,7 +313,7 @@ export const modalCloseButton = style({
 
 export const eggGrid = style({
   display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
   gap: 12,
   "@media": {
     "(max-width: 560px)": {
@@ -342,6 +342,11 @@ export const eggCard = style({
   },
 });
 
+export const description = style({
+  fontSize: "14.5px",
+  wordBreak: "keep-all",
+});
+
 export const selectedEggCard = style({
   background: "#6f8d55",
   borderColor: "#2e4b2b",
@@ -356,7 +361,7 @@ export const eggIcon = style({
   backgroundPosition: "0 0",
   imageRendering: "pixelated",
   transform: "scale(1.5)",
-  marginBottom: 14,
+  marginBottom: 16,
 });
 
 export const nameField = style({

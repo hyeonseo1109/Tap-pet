@@ -30,12 +30,17 @@ const eggs = [
   {
     species: "dog",
     name: "강아지 알",
-    description: "타자 소리에 맞춰 신나게 자라는 친구",
+    description: "활발하고 친절한 친구",
   },
   {
     species: "rabbit",
     name: "토끼 알",
-    description: "집중 시간이 길수록 반짝이는 친구",
+    description: "집중을 잘 하는 소심한 친구",
+  },
+  {
+    species: "chicken",
+    name: "닭 알",
+    description: "푸드덕푸드덕 천방지축 친구",
   },
 ];
 
@@ -124,7 +129,7 @@ const AddPetModal = ({ onClose, onConfirm }: AddPetModalProps) => {
             >
               <span className={styles.eggIcon} />
               <strong>{egg.name}</strong>
-              <span>{egg.description}</span>
+              <span className={styles.description}>{egg.description}</span>
             </button>
           ))}
         </div>
