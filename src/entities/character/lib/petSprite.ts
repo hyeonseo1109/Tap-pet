@@ -8,7 +8,7 @@ const SPECIES_SPRITE_MAP: Record<string, string> = {
   cat: "cat",
   dog: "dog",
   rabbit: "rabbit",
-  chicken: "cat", // TODO: chicken 이미지 추가 후 "chicken"으로 변경
+  chicken: "chicken",
 };
 
 const DEFAULT_SPRITE = "cat";
