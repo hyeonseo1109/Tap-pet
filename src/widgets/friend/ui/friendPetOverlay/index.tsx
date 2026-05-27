@@ -1,10 +1,16 @@
+// src/widgets/friend/ui/friendPetOverlay/index.tsx
 import { useEffect, useRef, useState } from "react";
+import {
+  getIdleSprite,
+  getTypingSprite,
+} from "@entities/character/lib/petSprite";
 import * as styles from "./style.css";
 
 type OnlineFriend = {
   id: string;
   nickname: string;
   stage: string;
+  species?: string | null;
   isTyping: boolean;
 };
 
@@ -26,10 +32,11 @@ const STAGE_ROW: Record<string, number> = {
 
 type AnimatedPetProps = {
   stage: string;
+  species?: string | null;
   isTyping: boolean;
 };
 
-const AnimatedPet = ({ stage, isTyping }: AnimatedPetProps) => {
+const AnimatedPet = ({ stage, species, isTyping }: AnimatedPetProps) => {
   const [frame, setFrame] = useState(0);
   const frameRef = useRef(0);
   const lastFrameTimeRef = useRef(0);
@@ -55,13 +62,13 @@ const AnimatedPet = ({ stage, isTyping }: AnimatedPetProps) => {
 
   const x = frame * FRAME_WIDTH;
   const y = STAGE_ROW[stage] * FRAME_HEIGHT;
-  const src = isTyping ? "/typing.png" : "/idle.png"; // 추가
+  const src = isTyping ? getTypingSprite(species) : getIdleSprite(species);
 
   return (
     <div
       className={styles.friendOverlayPet}
       style={{
-        backgroundImage: `url('${src}')`, // 수정
+        backgroundImage: `url('${src}')`,
         backgroundPositionX: `-${x}px`,
         backgroundPositionY: `-${y}px`,
       }}
@@ -95,7 +102,11 @@ export const FriendPetOverlay = ({
               {friend.nickname}
             </span>
           </div>
-          <AnimatedPet stage={friend.stage} isTyping={friend.isTyping} />
+          <AnimatedPet
+            stage={friend.stage}
+            species={friend.species}
+            isTyping={friend.isTyping}
+          />
         </div>
       ))}
     </>

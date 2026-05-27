@@ -10,6 +10,7 @@ import {
   type Pet,
 } from "@entities/character/model";
 import * as styles from "./style.css";
+import { getIdleSprite } from "@entities/character/lib/petSprite";
 
 type FriendProfile = {
   id: string;
@@ -407,6 +408,7 @@ export const FriendWidget = ({
                     style={
                       pet
                         ? {
+                            backgroundImage: `url('${getIdleSprite(pet.species)}')`,
                             backgroundPositionX: "0px",
                             backgroundPositionY: `-${stageY[petStage]}px`,
                           }
@@ -414,6 +416,7 @@ export const FriendWidget = ({
                     }
                   />
                 </div>
+
                 <div className={styles.friendInfo}>
                   <div className={styles.friendName}>
                     <strong>{friend.nickname}</strong>

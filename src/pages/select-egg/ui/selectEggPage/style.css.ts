@@ -86,7 +86,6 @@ export const selectedEggCard = style({
 export const eggIcon = style({
   width: 52,
   height: 64,
-  backgroundImage: "url('/idle.png')",
   backgroundRepeat: "no-repeat",
   backgroundPosition: "0 0",
   imageRendering: "pixelated",

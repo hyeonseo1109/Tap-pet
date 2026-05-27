@@ -116,6 +116,7 @@ export const HomePage = () => {
           id: f.id,
           nickname: f.nickname,
           stage: xpLevel(getPetXp(f.main_pet)),
+          species: f.main_pet?.species ?? null, // ← 추가
           isTyping: typingFriendIds.has(f.id),
         })),
     [friendProfiles, onlineFriendIds, hiddenOverlayIds, typingFriendIds],
@@ -299,7 +300,11 @@ export const HomePage = () => {
     [mainPet, schedulePersist, broadcastTyping],
   );
 
-  const { state: petState, animationSpeedRef, typingTick } = useGameEngine({
+  const {
+    state: petState,
+    animationSpeedRef,
+    typingTick,
+  } = useGameEngine({
     enabled: Boolean(mainPet),
     onTyping: handleTyping,
   });
@@ -309,6 +314,7 @@ export const HomePage = () => {
     appSettings,
     animationSpeedRef,
     mainPetStage,
+    mainPetSpecies: mainPet?.species,
     onlineFriendsForOverlay,
     petState,
     setHiddenOverlayIds,
@@ -321,6 +327,7 @@ export const HomePage = () => {
         <CharacterImage
           stage={mainPetStage}
           state={petState}
+          species={mainPet?.species}
           animationSpeedRef={animationSpeedRef}
         />
       )}

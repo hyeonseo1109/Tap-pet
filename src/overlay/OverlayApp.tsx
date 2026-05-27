@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { emit, listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { cursorPosition, getCurrentWindow } from "@tauri-apps/api/window";
+import {
+  getIdleSprite,
+  getTypingSprite,
+} from "@entities/character/lib/petSprite";
 
 const FRAME_WIDTH = 52;
 const FRAME_HEIGHT = 64;
@@ -24,6 +28,7 @@ type OnlineFriend = {
   id: string;
   nickname: string;
   stage: string;
+  species?: string | null;
   isTyping: boolean;
 };
 
@@ -31,6 +36,7 @@ type PetStatePayload = {
   stage: string;
   state: string;
   speed: number;
+  species?: string | null;
 };
 
 type FriendsPayload = {
@@ -197,12 +203,14 @@ const useOverlayWindowDrag = () => {
 const SpritePet = ({
   stage,
   state,
+  species,
   speedRef,
   dragging,
   onMouseDown,
 }: {
   stage: string;
   state: string;
+  species?: string | null;
   speedRef: React.RefObject<number>;
   dragging: boolean;
   onMouseDown: (e: React.MouseEvent) => void;
@@ -210,7 +218,8 @@ const SpritePet = ({
   const frame = useAnimatedFrame(speedRef);
   const x = frame * FRAME_WIDTH;
   const y = (STAGE_ROW[stage] ?? 0) * FRAME_HEIGHT;
-  const sprite = state === "typing" ? "/typing.png" : "/idle.png";
+  const sprite =
+    state === "typing" ? getTypingSprite(species) : getIdleSprite(species);
 
   return (
     <div
@@ -374,6 +383,7 @@ const FriendPet = ({
       <SpritePet
         stage={friend.stage}
         state={friend.isTyping ? "typing" : "idle"}
+        species={friend.species}
         speedRef={speedRef}
         dragging={dragging}
         onMouseDown={onMouseDown}
@@ -466,6 +476,8 @@ export const OverlayApp = () => {
   const isToastWindow = windowLabel === TOAST_WINDOW_LABEL;
   const [stage, setStage] = useState("egg");
   const [state, setState] = useState("idle");
+  const [species, setSpecies] = useState<string | null>(null);
+
   const [friends, setFriends] = useState<OnlineFriend[]>([]);
   const [pokeToasts, setPokeToasts] = useState<PokeToast[]>([]);
   const speedRef = useRef(220);
@@ -483,6 +495,7 @@ export const OverlayApp = () => {
     listen<PetStatePayload>("pet-state", ({ payload }) => {
       setStage(payload.stage);
       setState(payload.state);
+      setSpecies(payload.species ?? null);
       speedRef.current = payload.speed;
     }).then((fn) => {
       unlisten = fn;
@@ -580,6 +593,7 @@ export const OverlayApp = () => {
           <SpritePet
             stage={stage}
             state={state}
+            species={species}
             speedRef={speedRef}
             dragging={dragging}
             onMouseDown={startDrag}

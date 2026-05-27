@@ -43,7 +43,6 @@ export const petPreview = style({
   width: 52,
   height: 64,
   margin: "10px 0 4px",
-  backgroundImage: "url('/idle.png')",
   backgroundRepeat: "no-repeat",
   backgroundPosition: "0 0",
   imageRendering: "pixelated",

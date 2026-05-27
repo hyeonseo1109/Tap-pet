@@ -1,9 +1,15 @@
+// src/entities/character/ui/characterImage/index.tsx
 import { useEffect, useRef, useState } from "react";
+import {
+  getIdleSprite,
+  getTypingSprite,
+} from "@entities/character/lib/petSprite";
 import * as styles from "./style.css";
 
 interface Props {
   stage: string;
   state: string;
+  species?: string | null;
   animationSpeedRef: React.RefObject<number>;
 }
 
@@ -17,7 +23,12 @@ const STAGE_Y = {
   adult: 3,
 };
 
-export const CharacterImage = ({ stage, state, animationSpeedRef }: Props) => {
+export const CharacterImage = ({
+  stage,
+  state,
+  species,
+  animationSpeedRef,
+}: Props) => {
   const [frame, setFrame] = useState(0);
   const frameRef = useRef(0);
   const lastFrameTimeRef = useRef(0);
@@ -38,14 +49,15 @@ export const CharacterImage = ({ stage, state, animationSpeedRef }: Props) => {
   }, [animationSpeedRef]);
 
   const x = frame * FRAME_WIDTH;
-
   const y = STAGE_Y[stage as keyof typeof STAGE_Y] * FRAME_HEIGHT;
+  const src =
+    state === "typing" ? getTypingSprite(species) : getIdleSprite(species);
 
   return (
     <div
       className={styles.characterWidget}
       style={{
-        backgroundImage: `url(/${state}.png)`,
+        backgroundImage: `url(${src})`,
         backgroundPosition: `-${x}px -${y}px`,
       }}
     />

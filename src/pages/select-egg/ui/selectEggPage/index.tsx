@@ -2,6 +2,7 @@ import { supabase } from "@shared/api";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as styles from "./style.css";
+import { getIdleSprite } from "@entities/character/lib/petSprite";
 
 const eggs = [
   {
@@ -88,7 +89,12 @@ export const SelectEggPage = () => {
               onClick={() => setSelectedSpecies(egg.species)}
               type="button"
             >
-              <span className={styles.eggIcon} />
+              <span
+                className={styles.eggIcon}
+                style={{
+                  backgroundImage: `url('${getIdleSprite(selectedSpecies)}')`,
+                }}
+              />
               <strong>{egg.name}</strong>
               <span className={styles.description}>{egg.description}</span>
             </button>

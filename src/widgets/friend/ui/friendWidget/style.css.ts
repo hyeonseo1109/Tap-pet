@@ -165,7 +165,6 @@ export const friendPet = style({
 export const friendPetSprite = style({
   width: 52,
   height: 64,
-  backgroundImage: "url('/idle.png')",
   backgroundRepeat: "no-repeat",
   backgroundSize: "auto",
   imageRendering: "pixelated",

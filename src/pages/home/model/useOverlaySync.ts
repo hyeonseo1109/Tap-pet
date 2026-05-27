@@ -7,6 +7,7 @@ type OverlayFriend = {
   id: string;
   nickname: string;
   stage: string;
+  species?: string | null;
   isTyping: boolean;
 };
 
@@ -14,6 +15,7 @@ type UseOverlaySyncParams = {
   appSettings: SettingState;
   animationSpeedRef: RefObject<number>;
   mainPetStage: string;
+  mainPetSpecies?: string | null; // ← 추가
   onlineFriendsForOverlay: OverlayFriend[];
   petState: string;
   setHiddenOverlayIds: Dispatch<SetStateAction<Set<string>>>;
@@ -37,10 +39,10 @@ export const useOverlaySync = ({
   }, []);
 
   const syncOverlay = useCallback(
-    (stage: string, state: string, speed: number) => {
+    (stage: string, state: string, speed: number, species?: string | null) => {
       if (!isTauri()) return;
       import("@tauri-apps/api/event").then(({ emit }) => {
-        void emit("pet-state", { stage, state, speed });
+        void emit("pet-state", { stage, state, speed, species });
       });
     },
     [],
@@ -51,8 +53,20 @@ export const useOverlaySync = ({
     .join("|");
 
   useEffect(() => {
-    syncOverlay(mainPetStage, petState, animationSpeedRef.current);
-  }, [petState, mainPetStage, syncOverlay, animationSpeedRef, typingTick]);
+    syncOverlay(
+      mainPetStage,
+      petState,
+      animationSpeedRef.current,
+      mainPetSpecies,
+    );
+  }, [
+    petState,
+    mainPetStage,
+    mainPetSpecies,
+    syncOverlay,
+    animationSpeedRef,
+    typingTick,
+  ]);
 
   useEffect(() => {
     emitOverlayReset();

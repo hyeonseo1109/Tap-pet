@@ -11,6 +11,7 @@ import {
 } from "@entities/character/model";
 import { useMemo, useState } from "react";
 import * as styles from "./style.css";
+import { getIdleSprite } from "@entities/character/lib/petSprite";
 
 type HomeWidgetProps = {
   isLoading: boolean;
@@ -58,22 +59,34 @@ const formatDate = (date?: string | null) => {
 };
 
 /** 대표펫 초상화 - 크게 */
-const MainPetPortrait = ({ stage }: { stage: CharacterStage }) => (
+const MainPetPortrait = ({
+  stage,
+  species,
+}: {
+  stage: CharacterStage;
+  species?: string | null;
+}) => (
   <div
     className={styles.petPortrait}
     style={{
-      backgroundImage: "url('/idle.png')",
+      backgroundImage: `url('${getIdleSprite(species)}')`,
       backgroundPosition: `0 -${stageY[stage]}px`,
     }}
   />
 );
 
 /** 침실 펫 초상화 - 작게 */
-const RestPetPortrait = ({ stage }: { stage: CharacterStage }) => (
+const RestPetPortrait = ({
+  stage,
+  species,
+}: {
+  stage: CharacterStage;
+  species?: string | null;
+}) => (
   <div
     className={styles.restPetPortrait}
     style={{
-      backgroundImage: "url('/idle.png')",
+      backgroundImage: `url('${getIdleSprite(species)}')`,
       backgroundPosition: `0 -${stageY[stage]}px`,
     }}
   />
@@ -127,7 +140,12 @@ const AddPetModal = ({ onClose, onConfirm }: AddPetModalProps) => {
               onClick={() => setSelectedSpecies(egg.species)}
               type="button"
             >
-              <span className={styles.eggIcon} />
+              <span
+                className={styles.eggIcon}
+                style={{
+                  backgroundImage: `url('${getIdleSprite(selectedSpecies)}')`,
+                }}
+              />
               <strong>{egg.name}</strong>
               <span className={styles.description}>{egg.description}</span>
             </button>
@@ -293,7 +311,10 @@ export const HomeWidget = ({
         {!isLoading && mainPet && (
           <div className={styles.mainPetCard}>
             <div className={styles.portraitFrame}>
-              <MainPetPortrait stage={mainPetStage} />
+              <MainPetPortrait
+                stage={mainPetStage}
+                species={mainPet?.species}
+              />
             </div>
 
             <div className={styles.petInfo}>
@@ -366,7 +387,7 @@ export const HomeWidget = ({
             const petStage = xpLevel(getPetXp(pet));
             return (
               <article className={styles.restCard} key={pet.id}>
-                <RestPetPortrait stage={petStage} />
+                <RestPetPortrait stage={petStage} species={pet?.species} />
                 <div>
                   <strong>{pet.name}</strong>
                   <span>
