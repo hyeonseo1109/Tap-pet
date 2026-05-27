@@ -92,7 +92,7 @@ export const SelectEggPage = () => {
               <span
                 className={styles.eggIcon}
                 style={{
-                  backgroundImage: `url('${getIdleSprite(selectedSpecies)}')`,
+                  backgroundImage: `url('${getIdleSprite(egg.species)}')`,
                 }}
               />
               <strong>{egg.name}</strong>
