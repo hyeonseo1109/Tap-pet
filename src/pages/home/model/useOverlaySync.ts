@@ -26,6 +26,7 @@ export const useOverlaySync = ({
   appSettings,
   animationSpeedRef,
   mainPetStage,
+  mainPetSpecies,
   onlineFriendsForOverlay,
   petState,
   setHiddenOverlayIds,
