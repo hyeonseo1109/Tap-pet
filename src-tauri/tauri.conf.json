@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "grow-pet",
+  "productName": "Tap-Pet",
   "version": "0.1.0",
-  "identifier": "com.growpet.app",
+  "identifier": "com.tappet.app",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -13,7 +13,7 @@
     "macOSPrivateApi": true,
     "windows": [
       {
-        "title": "grow-pet",
+        "title": "Tap-Pet",
         "width": 800,
         "height": 600,
         "resizable": true,
@@ -27,7 +27,7 @@
   "plugins": {
     "deep-link": {
       "desktop": {
-        "schemes": ["growpet"]
+        "schemes": ["tappet"]
       }
     }
   },

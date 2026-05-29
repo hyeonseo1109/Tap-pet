@@ -8,7 +8,7 @@ export const LoginWidget = () => {
     <div className={styles.LoginWidget}>
       <div className={styles.titleBlock}>
         <span>타자 수로 펫을 키우자</span>
-        <h1>Grow Pet</h1>
+        <h1>Tap Pet</h1>
         <p>입력 내용은 저장하지 않고, 입력 횟수만 성장에 사용합니다.</p>
       </div>
       <div

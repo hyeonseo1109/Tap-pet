@@ -123,7 +123,7 @@ fn start_key_listener(app_handle: AppHandle) {
     std::thread::spawn(move || {
         let handle_clone = app_handle.clone();
 
-        eprintln!("[grow-pet] CGEventTap 생성 시도...");
+        eprintln!("[Tap-Pet] CGEventTap 생성 시도...");
 
         let tap = CGEventTap::new(
             CGEventTapLocation::HID,
@@ -133,7 +133,7 @@ fn start_key_listener(app_handle: AppHandle) {
             move |_, _, _| {
                 if LISTENING.load(Ordering::Relaxed) {
                     let category = get_active_app_category();
-                    eprintln!("[grow-pet] 키 감지! category={}", category);
+                    eprintln!("[Tap-Pet] 키 감지! category={}", category);
                     if let Some(window) = handle_clone.get_webview_window("main") {
                         let _ = window.emit("global-keypress", category);
                     }
@@ -142,11 +142,11 @@ fn start_key_listener(app_handle: AppHandle) {
             },
         );
 
-        eprintln!("[grow-pet] tap 결과: {:?}", tap.is_ok());
+        eprintln!("[Tap-Pet] tap 결과: {:?}", tap.is_ok());
 
         match tap {
             Ok(tap) => {
-                eprintln!("[grow-pet] CGEventTap 생성 성공 — RunLoop 시작");
+                eprintln!("[Tap-Pet] CGEventTap 생성 성공 — RunLoop 시작");
                 let loop_source = tap
                     .mach_port
                     .create_runloop_source(0)
@@ -158,7 +158,7 @@ fn start_key_listener(app_handle: AppHandle) {
             }
             Err(e) => {
                 eprintln!(
-                    "[grow-pet] CGEventTap 생성 실패 (err: {:?}) — \
+                    "[Tap-Pet] CGEventTap 생성 실패 (err: {:?}) — \
                     시스템 설정 > 개인 정보 보호 > 손쉬운 사용에서 앱을 허용해 주세요.",
                     e
                 );
@@ -168,7 +168,7 @@ fn start_key_listener(app_handle: AppHandle) {
                 std::process::Command::new("osascript")
                     .args([
                         "-e",
-                        r#"display dialog "Grow Pet이 전역 키 입력을 감지하려면 '손쉬운 사용' 권한이 필요합니다.\n\n시스템 설정 > 개인 정보 보호 및 보안 > 손쉬운 사용에서 앱을 허용한 뒤 재시작해 주세요." buttons {"확인"} default button 1"#,
+                        r#"display dialog "Tap-Pet이 전역 키 입력을 감지하려면 '손쉬운 사용' 권한이 필요합니다.\n\n시스템 설정 > 개인 정보 보호 및 보안 > 손쉬운 사용에서 앱을 허용한 뒤 재시작해 주세요." buttons {"확인"} default button 1"#,
                     ])
                     .spawn()
                     .ok();
@@ -191,7 +191,7 @@ fn start_key_listener(app_handle: AppHandle) {
             }
         });
         if let Err(e) = result {
-            eprintln!("[grow-pet] 키 입력 감지 실패: {:?}", e);
+            eprintln!("[Tap-Pet] 키 입력 감지 실패: {:?}", e);
         }
     });
 }
@@ -475,7 +475,7 @@ pub fn run() {
                     label.clone(),
                     WebviewUrl::App("overlay.html".into()),
                 )
-                .title(format!("grow-pet-{}", label))
+                .title(format!("Tap-Pet-{}", label))
                 .transparent(true)
                 .decorations(false)
                 .always_on_top(true)
@@ -499,7 +499,7 @@ pub fn run() {
             });
 
             // ── 글로벌 키 리스너 시작 ─────────────────────────
-            eprintln!("[grow-pet] setup 완료 — start_key_listener 호출");
+            eprintln!("[Tap-Pet] setup 완료 — start_key_listener 호출");
             let handle2 = app.handle().clone();
             start_key_listener(handle2);
             start_overlay_keeper(app.handle().clone());

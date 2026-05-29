@@ -8,13 +8,13 @@ export const loginWithGoogle = async () => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: "growpet://auth/callback",
+        redirectTo: "tappet://auth/callback",
         skipBrowserRedirect: true, // ← URL만 받고 직접 열지 않음
       },
     });
 
     if (error || !data.url) {
-      console.error("[grow-pet] OAuth URL 생성 실패", error);
+      console.error("[Tap-Pet] OAuth URL 생성 실패", error);
       return;
     }
 

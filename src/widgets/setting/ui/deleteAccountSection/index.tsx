@@ -33,7 +33,7 @@ export const DeleteAccountSection = () => {
     await supabase.from("pets").delete().eq("owner_id", user.id);
     await supabase.from("users_profile").delete().eq("id", user.id);
     await supabase.auth.signOut();
-    localStorage.removeItem("grow-pet-settings");
+    localStorage.removeItem("Tap-Pet-settings");
 
     setIsDeleting(false);
     navigate("/login-page");

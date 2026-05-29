@@ -136,7 +136,7 @@ export const HomePage = () => {
     const { error } = pet.owner_id
       ? await q.eq("owner_id", pet.owner_id)
       : await q;
-    if (error) console.error("[grow-pet] persist error", error);
+    if (error) console.error("[Tap-Pet] persist error", error);
   }, []);
 
   const schedulePersist = useCallback(
@@ -347,7 +347,7 @@ export const HomePage = () => {
         <div className={styles.sidePanel}>
           <div className={styles.logoBox}>
             <p className={styles.nicknameTitle}>
-              {myNickname ? `${myNickname}` : "Grow Pet"}
+              {myNickname ? `${myNickname}` : "Tap Pet"}
             </p>
             <p className={styles.miniTitle}>의 작업실</p>
           </div>

@@ -65,7 +65,7 @@ export const FriendWidget = ({
       .eq("user_id", user.id);
 
     if (friendsError) {
-      console.error("[grow-pet] friends load error", friendsError);
+      console.error("[Tap-Pet] friends load error", friendsError);
       setIsLoadingFriends(false);
       return;
     }

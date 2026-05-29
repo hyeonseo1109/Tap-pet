@@ -46,7 +46,7 @@ export const AuthCallbackPage = () => {
         // lib.rs에서 포워딩해주는 deep-link-url 이벤트 수신
         listen<string>("deep-link-url", async (event) => {
           const raw = event.payload;
-          // "growpet://auth/callback#access_token=...&refresh_token=..."
+          // "Tap-Pet://auth/callback#access_token=...&refresh_token=..."
           const hash = raw.includes("#")
             ? raw.split("#")[1]
             : (raw.split("?")[1] ?? "");

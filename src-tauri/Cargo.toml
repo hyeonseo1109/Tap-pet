@@ -1,12 +1,12 @@
 [package]
-name = "grow-pet"
+name = "Tap-Pet"
 version = "0.1.0"
-description = "Grow Pet - 타자 수로 키우는 펫"
+description = "Tap Pet - 타자 수로 키우는 펫"
 authors = []
 edition = "2021"
 
 [lib]
-name = "grow_pet_lib"
+name = "Tap_Pet_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

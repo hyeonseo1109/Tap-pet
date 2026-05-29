@@ -38,7 +38,7 @@ export const SettingWidget = ({ onSettingsChange }: SettingWidgetProps) => {
 
   const save = (next: SettingState) => {
     setValues(next);
-    localStorage.setItem("grow-pet-settings", JSON.stringify(next));
+    localStorage.setItem("Tap-Pet-settings", JSON.stringify(next));
     onSettingsChange?.(next);
   };
 
@@ -55,7 +55,7 @@ export const SettingWidget = ({ onSettingsChange }: SettingWidgetProps) => {
         .from("users_profile")
         .update({ share_details: next.shareDetails })
         .eq("id", user.id);
-      if (error) console.error("[grow-pet] share_details update error", error);
+      if (error) console.error("[Tap-Pet] share_details update error", error);
     }
   };
 
